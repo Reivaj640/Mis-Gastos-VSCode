@@ -43,7 +43,7 @@ export function formatCurrencySimple(amount: number, currencySymbol: string = "$
 }
 
 export function getExpenseStatus(
-  expense: { dueDay: number; isActive: boolean },
+  expense: { id: string; dueDay: number; isActive: boolean },
   payments: { expenseId: string; period: string }[],
   alertDays: number,
   currentPeriod: string

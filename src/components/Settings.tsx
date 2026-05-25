@@ -105,11 +105,12 @@ export default function Settings({
 
   const handleExportBackup = () => {
     const backup = {
-      version: 1,
+      version: 2,
       exportedAt: new Date().toISOString(),
       settings,
       expenses,
       payments,
+      incomes,
     };
     const json = JSON.stringify(backup, null, 2);
     const blob = new Blob([json], { type: "application/json" });
@@ -134,6 +135,7 @@ export default function Settings({
           setExpenses(data.expenses);
           setPayments(data.payments);
           if (data.settings) setSettings(data.settings);
+          if (data.incomes) setIncomes(data.incomes);
           toast({ title: "Datos restaurados correctamente" });
         } else {
           toast({ title: "Error", description: "Formato de archivo inválido", variant: "destructive" });

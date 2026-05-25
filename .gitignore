@@ -1,1 +1,5 @@
 node_modules
+.next
+out
+update-manifest.json
+dev.log
