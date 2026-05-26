@@ -3,3 +3,5 @@ node_modules
 out
 update-manifest.json
 dev.log
+tsconfig.tsbuildinfo
+next-env.d.ts
