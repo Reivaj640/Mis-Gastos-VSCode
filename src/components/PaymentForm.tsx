@@ -222,7 +222,7 @@ export default function PaymentForm({ expenses, payments, incomes, setPayments, 
                       <Badge variant="outline">{getCategoryLabel(selectedExpense.category, settings.customCategories)}</Badge>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Vence el día {selectedExpense.dueDay} de cada mes
+                      {selectedExpense.dueDay != null ? `Vence el día ${selectedExpense.dueDay} de cada mes` : "Gasto eventual"}
                     </p>
                   </div>
 
@@ -366,7 +366,7 @@ export default function PaymentForm({ expenses, payments, incomes, setPayments, 
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{expense.name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {getCategoryLabel(expense.category, settings.customCategories)} · Vence día {expense.dueDay}
+                          {getCategoryLabel(expense.category, settings.customCategories)} · {expense.dueDay != null ? `Vence día ${expense.dueDay}` : "Gasto eventual"}
                         </p>
                       </div>
                       <span className="font-semibold text-sm">

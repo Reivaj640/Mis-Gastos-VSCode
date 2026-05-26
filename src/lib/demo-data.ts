@@ -106,7 +106,7 @@ export function createDemoPayments(expenses: Expense[]): Payment[] {
 
   // Mes actual: pagar solo los gastos cuyo día de vencimiento ya pasó
   const today = now.getDate();
-  const expensesToPay = expenses.filter((e) => e.dueDay < today);
+  const expensesToPay = expenses.filter((e) => e.dueDay != null && e.dueDay < today);
   expensesToPay.forEach((expense) => {
     payments.push({
       id: generateId(),
@@ -115,7 +115,7 @@ export function createDemoPayments(expenses: Expense[]): Payment[] {
       paymentDate: new Date(
         now.getFullYear(),
         now.getMonth(),
-        Math.min(expense.dueDay, today)
+        Math.min(expense.dueDay!, today)
       ).toISOString(),
       period: currentPeriod,
     });

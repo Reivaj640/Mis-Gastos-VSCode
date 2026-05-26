@@ -18,7 +18,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
-      <body className="antialiased bg-background text-foreground">
+      <body className="antialiased bg-background text-foreground overflow-hidden h-screen">
         {children}
         <Toaster />
       </body>

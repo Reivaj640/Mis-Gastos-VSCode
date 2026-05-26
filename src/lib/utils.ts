@@ -43,7 +43,7 @@ export function formatCurrencySimple(amount: number, currencySymbol: string = "$
 }
 
 export function getExpenseStatus(
-  expense: { id: string; dueDay: number; isActive: boolean },
+  expense: { id: string; dueDay?: number; isActive: boolean },
   payments: { expenseId: string; period: string }[],
   alertDays: number,
   currentPeriod: string
@@ -55,11 +55,14 @@ export function getExpenseStatus(
   );
   if (isPaid) return "paid";
 
+  if (expense.dueDay == null) return "pending";
+
   const now = new Date();
   const dueDate = new Date(now.getFullYear(), now.getMonth(), expense.dueDay);
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-
-  const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+  const diffDays = Math.ceil(
+    (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+  );
 
   if (diffDays < 0) return "overdue";
   if (diffDays <= alertDays) return "pending";
@@ -119,6 +122,7 @@ export function getCategoryLabel(category: string, customCategories?: string[]):
     transporte: "Transporte",
     salud: "Salud",
     otros: "Otros",
+    hormiga: "Gasto Hormiga",
   };
   if (labels[category]) return labels[category];
   if (category.startsWith("custom_") && customCategories) {
@@ -145,6 +149,7 @@ export function getCategoryColor(category: string): string {
     case "educacion": return "bg-violet-100 dark:bg-violet-900/30 text-violet-600 dark:text-violet-400";
     case "transporte": return "bg-sky-100 dark:bg-sky-900/30 text-sky-600 dark:text-sky-400";
     case "salud": return "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400";
+    case "hormiga": return "bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400";
     default: return "bg-gray-100 dark:bg-gray-900/30 text-gray-600 dark:text-gray-400";
   }
 }
@@ -175,7 +180,8 @@ export function paymentsToCSV(payments: any[], expenses: any[], currencySymbol: 
   return [header, ...rows].join("\n");
 }
 
-export function getDaysUntilDue(dueDay: number): number {
+export function getDaysUntilDue(dueDay?: number): number {
+  if (dueDay == null) return 9999;
   const now = new Date();
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const dueDate = new Date(now.getFullYear(), now.getMonth(), dueDay);

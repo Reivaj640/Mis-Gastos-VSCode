@@ -10,6 +10,7 @@ import {
   Pencil,
   Trash2,
   Wallet,
+  Coffee,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -78,6 +79,7 @@ const categoryIcons: Record<string, React.ElementType> = {
   transporte: Car,
   salud: HeartPulse,
   otros: Tag,
+  hormiga: Coffee,
 };
 
 const containerVariants = {
@@ -542,7 +544,7 @@ export default function PaymentHistory({ expenses, payments, incomes, setPayment
                   <p className="text-sm font-medium">{expense?.name || "Desconocido"}</p>
                   {expense && (
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {getCategoryLabel(expense.category, customCategories)} · Vence día {expense.dueDay}
+                      {getCategoryLabel(expense.category, customCategories)} · {expense.dueDay != null ? `Vence día ${expense.dueDay}` : "Gasto eventual"}
                     </p>
                   )}
                 </div>

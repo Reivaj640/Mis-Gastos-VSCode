@@ -11,12 +11,14 @@ import {
   Moon,
   Monitor,
   Wallet,
+  Coffee,
 } from "lucide-react";
 import { useTheme } from "next-themes";
 import { cn, formatCurrencySimple, formatDaysLabel, getDaysUntilDue } from "@/lib/utils";
 import { ViewType, Expense, Payment, Income, AppSettings } from "@/lib/types";
 import { getExpenseStatus, getCurrentPeriod } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { APP_VERSION } from "@/lib/version";
 import { Button } from "@/components/ui/button";
 
 interface SidebarProps {
@@ -70,13 +72,13 @@ export default function Sidebar({ activeView, onViewChange, expenses, payments, 
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden lg:flex flex-col w-64 border-r border-border bg-card shrink-0">
+      <aside className="hidden lg:flex flex-col w-64 border-r border-border bg-card shrink-0 h-screen shadow-sm">
         <div className="p-6 border-b border-border">
           <h1 className="text-xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
             💰 Mis Gastos
           </h1>
           <p className="text-xs text-muted-foreground mt-1">Control de gastos mensuales</p>
-          <p className="text-[10px] text-muted-foreground/50 mt-0.5">v2.0</p>
+          <p className="text-[10px] text-muted-foreground/50 mt-0.5">v{APP_VERSION}</p>
         </div>
 
         <nav className="flex-1 p-4 space-y-1">
@@ -118,7 +120,7 @@ export default function Sidebar({ activeView, onViewChange, expenses, payments, 
           })}
         </nav>
 
-        <div className="p-4 border-t border-border space-y-3">
+        <div className="p-4 border-t border-border space-y-3 mt-auto bg-muted/30">
           {unpaidCount > 0 && (
             <div className={cn(
               "rounded-lg p-3 border",

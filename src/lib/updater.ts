@@ -2,7 +2,7 @@ import { APP_VERSION, compareVersions, type UpdateManifest } from "./version";
 
 // ---- IndexedDB for persistent version storage ----
 const DB_NAME = "mis-gastos-updater";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_NAME = "updates";
 
 function openDB(): Promise<IDBDatabase> {
@@ -11,7 +11,7 @@ function openDB(): Promise<IDBDatabase> {
     request.onupgradeneeded = (e) => {
       const db = (e.target as IDBOpenDBRequest).result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
-        db.createObjectStore(STORE_NAME);
+        db.createObjectStore(STORE_NAME, { keyPath: "key" });
       }
     };
     request.onsuccess = (e) => resolve((e.target as IDBOpenDBRequest).result);
@@ -25,7 +25,13 @@ function dbGet(key: string): Promise<any> {
       new Promise((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, "readonly");
         const req = tx.objectStore(STORE_NAME).get(key);
-        req.onsuccess = () => resolve(req.result ? req.result.value : null);
+        req.onsuccess = () => {
+          if (req.result) {
+            resolve(req.result.value !== undefined ? req.result.value : req.result);
+          } else {
+            resolve(null);
+          }
+        };
         req.onerror = () => reject(req.error);
       })
   );
@@ -175,8 +181,19 @@ export async function activateUpdate(cacheName: string): Promise<void> {
   const sw = getSW();
   if (sw) {
     sw.postMessage({ type: "CACHE_UPDATED", data: { cacheName } });
-    // Give SW time to process
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise<void>((resolve) => {
+      const handler = (event: MessageEvent) => {
+        if (event.data?.type === "CACHE_SWITCHED") {
+          navigator.serviceWorker.removeEventListener("message", handler);
+          resolve();
+        }
+      };
+      navigator.serviceWorker.addEventListener("message", handler);
+      setTimeout(() => {
+        navigator.serviceWorker.removeEventListener("message", handler);
+        resolve();
+      }, 8000);
+    });
   }
 }
 

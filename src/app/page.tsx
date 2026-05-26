@@ -92,13 +92,16 @@ export default function Home() {
     const currentPeriod = getCurrentPeriod();
     const now = new Date();
 
-    const overdueCount = expenses
-      .filter((e) => e.isActive)
-      .filter((e) => {
-        const dueDate = new Date(now.getFullYear(), now.getMonth(), e.dueDay);
-        const isPaid = payments.some((p) => p.expenseId === e.id && p.period === currentPeriod);
-        return !isPaid && dueDate < now;
-      }).length;
+const overdueCount = expenses
+            .filter((e) => e.isActive)
+            .filter((e) => {
+              if (e.dueDay == null) return false;
+              const dueDate = new Date(now.getFullYear(), now.getMonth(), e.dueDay);
+              const isPaid = payments.some(
+                (p) => p.expenseId === e.id && p.period === currentPeriod
+              );
+              return !isPaid && dueDate < now;
+            }).length;
 
     if (overdueCount > 0) {
       toast({
@@ -208,8 +211,7 @@ export default function Home() {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      <div className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
-        <div className="flex flex-1">
+      <div className="h-full flex bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
           <Sidebar
             activeView={activeView}
             onViewChange={handleViewChange}
@@ -218,7 +220,7 @@ export default function Home() {
             settings={settings}
           />
 
-          <main className="flex-1 min-w-0">
+          <main className="flex-1 min-w-0 h-screen overflow-y-auto">
             <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
               <AlertBanner
                 expenses={expenses}
@@ -240,7 +242,6 @@ export default function Home() {
               </AnimatePresence>
             </div>
           </main>
-        </div>
       </div>
       <Toaster richColors position="top-right" />
     </ThemeProvider>

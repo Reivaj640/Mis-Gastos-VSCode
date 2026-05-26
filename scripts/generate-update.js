@@ -69,6 +69,24 @@ function main() {
   const rawFiles = collectFiles(OUT_DIR, OUT_DIR);
   console.log(`Archivos encontrados: ${rawFiles.length}`);
 
+  // Copy sw.js from public/ to out/ and prioritize it
+  const swSrc = path.resolve(__dirname, "..", "public", "sw.js");
+  const swDest = path.resolve(OUT_DIR, "sw.js");
+  if (fs.existsSync(swSrc)) {
+    fs.copyFileSync(swSrc, swDest);
+    console.log("sw.js copiado de public/ a out/");
+  }
+
+  // Prioritize sw.js as first file in manifest
+  const swIndex = rawFiles.findIndex((f) => f.path === "sw.js");
+  if (swIndex > 0) {
+    const [swFile] = rawFiles.splice(swIndex, 1);
+    rawFiles.unshift(swFile);
+  }
+  if (swIndex === 0) {
+    console.log("sw.js priorizado como primer archivo del manifest");
+  }
+
   const files = rawFiles.map((f) => {
     const buf = fs.readFileSync(f.fullPath);
     return {

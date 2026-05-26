@@ -4,7 +4,7 @@ export interface Expense {
   category: string;
   customCategory?: string;
   amount: number;
-  dueDay: number;
+  dueDay?: number;
   isActive: boolean;
   createdAt: string;
 }
@@ -52,6 +52,7 @@ export const CATEGORIES = [
   { value: "educacion", label: "Educación", icon: "GraduationCap" },
   { value: "transporte", label: "Transporte", icon: "Car" },
   { value: "salud", label: "Salud", icon: "HeartPulse" },
+  { value: "hormiga", label: "Gasto Hormiga", icon: "Coffee" },
   { value: "otros", label: "Otros", icon: "Tag" },
 ] as const;
 

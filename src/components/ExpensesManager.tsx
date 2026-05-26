@@ -25,6 +25,7 @@ import {
   GraduationCap,
   Car,
   HeartPulse,
+  Coffee,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -86,6 +87,7 @@ const categoryIcons: Record<string, React.ElementType> = {
   transporte: Car,
   salud: HeartPulse,
   otros: Tag,
+  hormiga: Coffee,
 };
 
 export default function ExpensesManager({ expenses, setExpenses, payments, settings }: ExpensesManagerProps) {
@@ -116,7 +118,7 @@ export default function ExpensesManager({ expenses, setExpenses, payments, setti
         if (filterCategory !== "all" && e.category !== filterCategory) return false;
         return true;
       })
-      .sort((a, b) => a.dueDay - b.dueDay);
+      .sort((a, b) => (a.dueDay ?? 99) - (b.dueDay ?? 99));
   }, [expenses, search, filterCategory]);
 
   const openCreateDialog = () => {
@@ -135,18 +137,18 @@ export default function ExpensesManager({ expenses, setExpenses, payments, setti
     setFormCategory(expense.category);
     setFormCustomCategory(expense.customCategory || "");
     setFormAmount(expense.amount.toString());
-    setFormDueDay(expense.dueDay.toString());
+    setFormDueDay(expense.dueDay != null ? expense.dueDay.toString() : "");
     setDialogOpen(true);
   };
 
-  const handleSave = () => {
-    const name = formName.trim();
-    const amount = parseFloat(formAmount);
-    const dueDay = parseInt(formDueDay);
+const handleSave = () => {
+  const name = formName.trim();
+  const amount = parseFloat(formAmount);
+  const isHormiga = formCategory === "hormiga";
+  const dueDay = isHormiga ? undefined : parseInt(formDueDay);
 
-    if (!name || isNaN(amount) || amount <= 0 || isNaN(dueDay) || dueDay < 1 || dueDay > 31) {
-      return;
-    }
+  if (!name || isNaN(amount) || amount <= 0) return;
+  if (!isHormiga && (isNaN(dueDay!) || dueDay! < 1 || dueDay! > 31)) return;
 
     if (editingExpense) {
       setExpenses((prev) =>
@@ -157,10 +159,10 @@ export default function ExpensesManager({ expenses, setExpenses, payments, setti
                 name,
                 category: formCategory,
                 customCategory: formCategory === "otros" ? formCustomCategory.trim() || undefined : undefined,
-                amount,
-                dueDay,
-              }
-            : e
+        amount,
+        dueDay: dueDay as number | undefined,
+      }
+: e
         )
       );
     } else {
@@ -169,9 +171,9 @@ export default function ExpensesManager({ expenses, setExpenses, payments, setti
         name,
         category: formCategory,
         customCategory: formCategory === "otros" ? formCustomCategory.trim() || undefined : undefined,
-        amount,
-        dueDay,
-        isActive: true,
+    amount,
+    dueDay: dueDay as number | undefined,
+    isActive: true,
         createdAt: new Date().toISOString(),
       };
       setExpenses((prev) => [...prev, newExpense]);
@@ -295,8 +297,7 @@ export default function ExpensesManager({ expenses, setExpenses, payments, setti
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {getCategoryLabel(expense.category, customCategories)}
                             {expense.customCategory ? ` · ${expense.customCategory}` : ""}
-                            {" · Vence día "}
-                            {expense.dueDay}
+{expense.dueDay != null ? ` · Vence día ${expense.dueDay}` : " · Gasto eventual"}
                           </p>
                         </div>
 
@@ -424,9 +425,10 @@ export default function ExpensesManager({ expenses, setExpenses, payments, setti
               </div>
               <div className="space-y-2">
                 <Label htmlFor="dueDay">Día de vencimiento</Label>
-                <Input
-                  id="dueDay"
-                  type="number"
+<Input
+id="dueDay"
+type="number"
+disabled={formCategory === "hormiga"}
                   placeholder="1-31"
                   min="1"
                   max="31"
@@ -443,7 +445,7 @@ export default function ExpensesManager({ expenses, setExpenses, payments, setti
             </Button>
             <Button
               onClick={handleSave}
-              disabled={!formName.trim() || !formAmount || parseFloat(formAmount) <= 0 || !formDueDay}
+              disabled={!formName.trim() || !formAmount || parseFloat(formAmount) <= 0 || (formCategory !== "hormiga" && !formDueDay)}
             >
               {editingExpense ? "Guardar Cambios" : "Crear Gasto"}
             </Button>

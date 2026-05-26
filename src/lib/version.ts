@@ -1,5 +1,5 @@
-export const APP_VERSION = "2.0.1";
-export const APP_BUILD_DATE = "2026-05-25";
+export const APP_VERSION = "2.1.3";
+export const APP_BUILD_DATE = "2026-05-26";
 
 /**
  * Compare two semver version strings.

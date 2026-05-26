@@ -17,7 +17,7 @@ import {
 import {
   Droplets, Zap, Flame, Wifi, Home, Tag,
   Landmark, Heart, Clapperboard, ShieldCheck,
-  GraduationCap, Car, HeartPulse,
+  GraduationCap, Car, HeartPulse, Coffee,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -34,6 +34,7 @@ const categoryIcons: Record<string, React.ElementType> = {
   entretenimiento: Clapperboard, seguro: ShieldCheck,
   educacion: GraduationCap, transporte: Car, salud: HeartPulse,
   otros: Tag,
+  hormiga: Coffee,
 };
 
 export default function AlertBanner({ expenses, payments, settings, onNavigateToPayment }: AlertBannerProps) {
@@ -108,7 +109,7 @@ export default function AlertBanner({ expenses, payments, settings, onNavigateTo
                   <Badge key={e.id} variant="outline" className="text-[11px] gap-1 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-900/40 px-2">
                     <Icon className="h-3 w-3" />
                     {e.name}
-                    <span className="text-amber-600/70">día {e.dueDay}</span>
+                    <span className="text-amber-600/70">{e.dueDay != null ? `día ${e.dueDay}` : "eventual"}</span>
                   </Badge>
                 );
               })}

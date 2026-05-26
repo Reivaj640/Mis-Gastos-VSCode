@@ -6,6 +6,7 @@ import {
   Wallet,
   CheckCircle2,
   Clock,
+  CalendarDays,
   AlertTriangle,
   TrendingUp,
   ArrowRight,
@@ -22,6 +23,7 @@ import {
   GraduationCap,
   Car,
   HeartPulse,
+  Coffee,
   CircleCheckBig,
   CircleX,
   CircleAlert,
@@ -69,6 +71,7 @@ const categoryIcons: Record<string, React.ElementType> = {
   transporte: Car,
   salud: HeartPulse,
   otros: Tag,
+  hormiga: Coffee,
 };
 
 const containerVariants = {
@@ -183,7 +186,7 @@ export default function Dashboard({ expenses, payments, incomes, settings, onNav
         const order = { overdue: 0, pending: 1, upcoming: 2, paid: 3 };
         const diff = order[a.status] - order[b.status];
         if (diff !== 0) return diff;
-        return a.daysUntilDue - b.daysUntilDue;
+        return (a.expense.dueDay ?? 99) - (b.expense.dueDay ?? 99);
       });
 
     // Income balances
@@ -326,7 +329,7 @@ export default function Dashboard({ expenses, payments, incomes, settings, onNav
         {/* LEFT: Compromisos del Mes */}
         <CollapsibleSection
           title="Compromisos del Mes"
-          icon={<CardTitle className="text-base font-semibold">Compromisos del Mes</CardTitle>}
+          icon={<CalendarDays className="h-4 w-4 text-muted-foreground" />}
           badge={unpaidCommitments.length > 0 ? (
             <Badge variant="destructive" className="text-[10px] h-5">
               {unpaidCommitments.length} pendiente{unpaidCommitments.length !== 1 ? "s" : ""}
@@ -391,7 +394,7 @@ export default function Dashboard({ expenses, payments, incomes, settings, onNav
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{expense.name}</p>
                       <p className="text-[10px] text-muted-foreground">
-                        {getCategoryLabel(expense.category, settings.customCategories)} · Día {expense.dueDay}
+                        {getCategoryLabel(expense.category, settings.customCategories)} · {expense.dueDay != null ? `Día ${expense.dueDay}` : "Gasto eventual"}
                       </p>
                     </div>
                     <div className="text-right shrink-0">
@@ -415,7 +418,7 @@ export default function Dashboard({ expenses, payments, incomes, settings, onNav
         {/* RIGHT: Saldos por Responsable */}
         <CollapsibleSection
           title="Saldos por Responsable"
-          icon={<CardTitle className="text-base font-semibold">Saldos por Responsable</CardTitle>}
+          icon={<Users className="h-4 w-4 text-muted-foreground" />}
           defaultOpen={stats.incomeBalances.length > 0}
           headerRight={
             <Button
@@ -692,7 +695,7 @@ function CollapsiblePaidSection({
                   {expense.name}
                 </p>
                 <p className="text-[10px] text-muted-foreground">
-                  {getCategoryLabel(expense.category, customCategories)} · Día {expense.dueDay}
+                  {getCategoryLabel(expense.category, customCategories)} · {expense.dueDay != null ? `Día ${expense.dueDay}` : "Gasto eventual"}
                       </p>
                     </div>
                     <p className="text-sm font-semibold text-muted-foreground line-through shrink-0">
