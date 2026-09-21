@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, memo } from "react";
 import { motion } from "framer-motion";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   Search,
   Download,
@@ -11,6 +12,10 @@ import {
   Trash2,
   Wallet,
   Coffee,
+  X,
+  Filter,
+  Calendar,
+  DollarSign,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -50,6 +55,7 @@ import {
   paymentsToCSV,
   getAllCategories,
 } from "@/lib/utils";
+import { sanitizeInput } from "@/lib/security";
 import { useToast } from "@/hooks/use-toast";
 import {
   Droplets, Zap, Flame, Wifi, Home, Tag,
@@ -101,6 +107,12 @@ export default function PaymentHistory({ expenses, payments, incomes, setPayment
   const [filterPeriod, setFilterPeriod] = useState<string>("all");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [searchName, setSearchName] = useState("");
+  const [searchMinAmount, setSearchMinAmount] = useState("");
+  const [searchMaxAmount, setSearchMaxAmount] = useState("");
+  const [searchStartDate, setSearchStartDate] = useState("");
+  const [searchEndDate, setSearchEndDate] = useState("");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
 
   // Edit dialog state
   const [editingPayment, setEditingPayment] = useState<Payment | null>(null);
@@ -123,12 +135,32 @@ export default function PaymentHistory({ expenses, payments, incomes, setPayment
         }
         if (searchName) {
           const expense = expenses.find((e) => e.id === p.expenseId);
-          if (!expense || !expense.name.toLowerCase().includes(searchName.toLowerCase())) return false;
+          const expenseName = expense?.name || "";
+          if (!expense || !expenseName.toLowerCase().includes(searchName.toLowerCase())) return false;
+        }
+        if (searchMinAmount) {
+          const min = parseFloat(searchMinAmount);
+          if (p.amount < min) return false;
+        }
+        if (searchMaxAmount) {
+          const max = parseFloat(searchMaxAmount);
+          if (p.amount > max) return false;
+        }
+        if (searchStartDate) {
+          const start = new Date(searchStartDate);
+          const paymentDate = new Date(p.paymentDate);
+          if (paymentDate < start) return false;
+        }
+        if (searchEndDate) {
+          const end = new Date(searchEndDate);
+          end.setHours(23, 59, 59, 999);
+          const paymentDate = new Date(p.paymentDate);
+          if (paymentDate > end) return false;
         }
         return true;
       })
       .sort((a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime());
-  }, [payments, filterPeriod, filterCategory, searchName, expenses]);
+  }, [payments, filterPeriod, filterCategory, searchName, searchMinAmount, searchMaxAmount, searchStartDate, searchEndDate, expenses]);
 
   const categorySummary = useMemo(() => {
     const summary: Record<string, { count: number; total: number }> = {};
@@ -186,6 +218,20 @@ export default function PaymentHistory({ expenses, payments, incomes, setPayment
       }).slice(0, now.getMonth() + 1),
     };
   }, [payments]);
+
+  const resetFilters = () => {
+    setSearchName("");
+    setSearchMinAmount("");
+    setSearchMaxAmount("");
+    setSearchStartDate("");
+    setSearchEndDate("");
+    setFilterPeriod("all");
+    setFilterCategory("all");
+    setShowAdvancedFilters(false);
+  };
+
+  const hasActiveFilters = searchName || searchMinAmount || searchMaxAmount || searchStartDate || searchEndDate || filterCategory !== "all";
+
 
   const handleExportCSV = () => {
     const csv = paymentsToCSV(filteredPayments, expenses, cs);
@@ -338,7 +384,7 @@ export default function PaymentHistory({ expenses, payments, incomes, setPayment
             </Card>
           </motion.div>
 
-          <motion.div variants={containerVariants} initial="hidden" animate="show" className="space-y-2">
+          <motion.div variants={containerVariants} initial="hidden" animate="show">
             {filteredPayments.length === 0 ? (
               <Card className="border-none shadow-sm">
                 <CardContent className="p-8 text-center">
@@ -346,72 +392,76 @@ export default function PaymentHistory({ expenses, payments, incomes, setPayment
                 </CardContent>
               </Card>
             ) : (
-              filteredPayments.map((payment) => {
-                const expense = expenses.find((e) => e.id === payment.expenseId);
-                const Icon = expense ? (categoryIcons[expense.category] || Tag) : Tag;
-                const incomeName = getIncomeName(payment.payerId);
-                return (
-                  <motion.div key={payment.id} variants={itemVariants}>
-                    <Card className="border-none shadow-sm hover:shadow-md transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${expense ? getCategoryColor(expense.category) : "bg-muted"}`}>
-                            <Icon className="h-5 w-5" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium text-sm truncate">
-                                {expense?.name || "Desconocido"}
-                              </p>
-                              {incomeName && (
-                                <Badge variant="outline" className="text-[10px] gap-1 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 shrink-0">
-                                  <Wallet className="h-2.5 w-2.5" />
-                                  {incomeName}
-                                </Badge>
-                              )}
+              <div className="space-y-2">
+                {filteredPayments.map((payment) => {
+                  const expense = expenses.find((e) => e.id === payment.expenseId);
+                  const Icon = expense ? (categoryIcons[expense.category] || Tag) : Tag;
+                  const incomeName = getIncomeName(payment.payerId);
+                  return (
+                    <motion.div key={payment.id} variants={itemVariants}>
+                      <Card className="border-none shadow-sm hover:shadow-md transition-shadow">
+                        <CardContent className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className={`h-10 w-10 rounded-lg flex items-center justify-center shrink-0 ${expense ? getCategoryColor(expense.category) : "bg-muted"}`}>
+                              <Icon className="h-5 w-5" />
                             </div>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-{expense ? getCategoryLabel(expense.category, customCategories) : ""}
-                      {payment.notes ? ` · ${payment.notes}` : ""}
-                              {" · "} {getMonthName(payment.period)}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <div className="text-right">
-                              <p className="font-semibold text-sm">
-                                {formatCurrencySimple(payment.amount, cs)}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {new Date(payment.paymentDate).toLocaleDateString("es-CO")}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium text-sm truncate">
+                                  {expense ? sanitizeInput(expense.name) : "Desconocido"}
+                                </p>
+                                {incomeName && (
+                                  <Badge variant="outline" className="text-[10px] gap-1 bg-blue-50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800 shrink-0">
+                                    <Wallet className="h-2.5 w-2.5" />
+                                    {incomeName}
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-0.5">
+                                {expense ? getCategoryLabel(expense.category, customCategories) : ""}
+                                {payment.notes ? ` · ${sanitizeInput(payment.notes)}` : ""}
+                                {" · "} {getMonthName(payment.period)}
                               </p>
                             </div>
-                            <div className="flex gap-1 ml-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950"
-                                onClick={() => openEditDialog(payment)}
-                                title="Editar pago"
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
-                                onClick={() => setDeleteConfirm(payment)}
-                                title="Eliminar pago"
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <div className="text-right">
+                                <p className="font-semibold text-sm">
+                                  {formatCurrencySimple(payment.amount, cs)}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {new Date(payment.paymentDate).toLocaleDateString("es-CO")}
+                                </p>
+                              </div>
+                              <div className="flex gap-1 ml-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950"
+                                  onClick={() => openEditDialog(payment)}
+                                  title="Editar pago"
+                                  aria-label={`Editar pago de ${expense ? sanitizeInput(expense.name) : "desconocido"}`}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-red-500 hover:bg-red-50 dark:hover:bg-red-950"
+                                  onClick={() => setDeleteConfirm(payment)}
+                                  title="Eliminar pago"
+                                  aria-label={`Eliminar pago de ${expense ? sanitizeInput(expense.name) : "desconocido"}`}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                );
-              })
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  );
+                })}
+              </div>
             )}
           </motion.div>
         </TabsContent>
@@ -541,7 +591,7 @@ export default function PaymentHistory({ expenses, payments, incomes, setPayment
             return (
               <div className="space-y-4 py-2">
                 <div className="rounded-lg bg-muted/50 p-3">
-                  <p className="text-sm font-medium">{expense?.name || "Desconocido"}</p>
+                  <p className="text-sm font-medium">{expense ? sanitizeInput(expense.name) : "Desconocido"}</p>
                   {expense && (
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {getCategoryLabel(expense.category, customCategories)} · {expense.dueDay != null ? `Vence día ${expense.dueDay}` : "Gasto eventual"}
@@ -646,7 +696,7 @@ export default function PaymentHistory({ expenses, payments, incomes, setPayment
             const expense = expenses.find((e) => e.id === deleteConfirm.expenseId);
             return (
               <p className="text-sm text-muted-foreground">
-                ¿Estás seguro de que deseas eliminar el pago de <strong>{expense?.name || "desconocido"}</strong> por{" "}
+                ¿Estás seguro de que deseas eliminar el pago de <strong>{expense ? sanitizeInput(expense.name) : "desconocido"}</strong> por{" "}
                 <strong>{formatCurrencySimple(deleteConfirm.amount, cs)}</strong>?
                 Esta acción no se puede deshacer.
               </p>

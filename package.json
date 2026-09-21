@@ -39,7 +39,9 @@
       "target": [
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "icon": "electron/icon.png",
@@ -94,13 +96,14 @@
     "@swc/helpers": "^0.5.21",
     "@tanstack/react-query": "^5.82.0",
     "@tanstack/react-table": "^8.21.3",
+    "@tanstack/react-virtual": "^3.14.13",
     "@types/uuid": "^11.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
-    "framer-motion": "^12.23.2",
+    "framer-motion": "^12.43.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.525.0",
     "next": "^16.1.1",
@@ -124,7 +127,7 @@
     "vaul": "^1.1.2",
     "z-ai-web-dev-sdk": "^0.0.17",
     "zod": "^4.0.2",
-    "zustand": "^5.0.6"
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

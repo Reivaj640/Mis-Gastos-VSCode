@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { ThemeProvider } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
+import { Wallet } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useToast } from "@/hooks/use-toast";
@@ -34,10 +35,23 @@ export default function Home() {
   useEffect(() => {
     if (isInitialized) return;
 
-    // Safety timeout: force initialization after 2 seconds no matter what
-    const safetyTimer = setTimeout(() => {
+    let safetyTimer: NodeJS.Timeout | null = null;
+    let initComplete = false;
+
+    const completeInitialization = () => {
+      if (initComplete) return;
+      initComplete = true;
       setIsInitialized(true);
-    }, 2000);
+      if (safetyTimer) {
+        clearTimeout(safetyTimer);
+      }
+    };
+
+    // Safety timeout: force initialization after 3 seconds (increased for slow devices)
+    safetyTimer = setTimeout(() => {
+      console.warn("Initialization timeout - forcing initialization");
+      completeInitialization();
+    }, 3000);
 
     try {
       // Read localStorage directly (bypass hook state which may not be hydrated yet)
@@ -72,11 +86,14 @@ export default function Home() {
       setInitError("Error al cargar datos. Intenta recargar la página.");
     }
 
-    // Mark as initialized immediately
-    setIsInitialized(true);
-    clearTimeout(safetyTimer);
+    // Mark as initialized when complete
+    completeInitialization();
 
-    return () => clearTimeout(safetyTimer);
+    return () => {
+      if (safetyTimer) {
+        clearTimeout(safetyTimer);
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Run once on mount
   }, []);
 
@@ -187,8 +204,22 @@ const overdueCount = expenses
 
   if (!isInitialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Cargando...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted/20">
+        <div className="text-center space-y-4">
+          <div className="relative">
+            <div className="w-16 h-16 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
+            <Wallet className="w-6 h-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-lg font-semibold">Cargando Mis Gastos</h2>
+            <p className="text-sm text-muted-foreground">Preparando tu información financiera...</p>
+          </div>
+          <div className="flex gap-1 justify-center">
+            <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
+            <div className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
+            <div className="w-2 h-2 bg-primary rounded-full animate-bounce" />
+          </div>
+        </div>
       </div>
     );
   }
