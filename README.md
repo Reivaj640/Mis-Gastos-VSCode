@@ -71,11 +71,11 @@ Asegúrate de tener instalado:
 git clone https://github.com/TU_USUARIO/mis-gastos.git
 cd mis-gastos
 
-3. Instalar dependencias
+### 3. Instalar dependencias
 bash
 
 123
-4. Ejecutar en desarrollo
+### 4. Ejecutar en desarrollo
 bash
 
 1
