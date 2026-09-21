@@ -65,6 +65,7 @@ import {
   generateId,
   getAllCategories,
 } from "@/lib/utils";
+import { sanitizeInput } from "@/lib/security";
 
 interface ExpensesManagerProps {
   expenses: Expense[];
@@ -289,14 +290,14 @@ const handleSave = () => {
 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="font-medium text-sm truncate">{expense.name}</p>
+                            <p className="font-medium text-sm truncate">{sanitizeInput(expense.name)}</p>
                             {!expense.isActive && (
                               <Badge variant="outline" className="text-[10px]">Inactivo</Badge>
                             )}
                           </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {getCategoryLabel(expense.category, customCategories)}
-                            {expense.customCategory ? ` · ${expense.customCategory}` : ""}
+                            {expense.customCategory ? ` · ${sanitizeInput(expense.customCategory)}` : ""}
 {expense.dueDay != null ? ` · Vence día ${expense.dueDay}` : " · Gasto eventual"}
                           </p>
                         </div>
@@ -317,12 +318,13 @@ const handleSave = () => {
                             className="h-8 w-8 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950"
                             onClick={() => openEditDialog(expense)}
                             title="Editar gasto"
+                            aria-label={`Editar gasto ${sanitizeInput(expense.name)}`}
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Más opciones">
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>

@@ -131,7 +131,7 @@ export default function AlertBanner({ expenses, payments, settings, onNavigateTo
               </Button>
             )}
           </div>
-          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground shrink-0" onClick={() => setDismissed(true)}>
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-foreground shrink-0" onClick={() => setDismissed(true)} aria-label="Cerrar alerta">
             <X className="h-3.5 w-3.5" />
           </Button>
         </div>

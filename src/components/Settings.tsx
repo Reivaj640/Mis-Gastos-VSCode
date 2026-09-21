@@ -131,18 +131,71 @@ export default function Settings({
     reader.onload = (e) => {
       try {
         const data = JSON.parse(e.target?.result as string);
-        if (data.expenses && data.payments) {
-          setExpenses(data.expenses);
-          setPayments(data.payments);
-          if (data.settings) setSettings(data.settings);
-          if (data.incomes) setIncomes(data.incomes);
-          toast({ title: "Datos restaurados correctamente" });
-        } else {
-          toast({ title: "Error", description: "Formato de archivo inválido", variant: "destructive" });
+        
+        // Validar estructura del backup
+        if (!data || typeof data !== 'object') {
+          throw new Error('El archivo no contiene un objeto válido');
         }
-      } catch {
-        toast({ title: "Error", description: "No se pudo leer el archivo", variant: "destructive" });
+        
+        // Validar que expenses sea un array
+        if (!Array.isArray(data.expenses)) {
+          throw new Error('El campo "expenses" debe ser un array');
+        }
+        
+        // Validar que payments sea un array
+        if (!Array.isArray(data.payments)) {
+          throw new Error('El campo "payments" debe ser un array');
+        }
+        
+        // Validar estructura básica de cada expense
+        for (const expense of data.expenses) {
+          if (!expense.id || typeof expense.name !== 'string' || typeof expense.amount !== 'number') {
+            throw new Error('El archivo contiene gastos con formato inválido');
+          }
+        }
+        
+        // Validar estructura básica de cada payment
+        for (const payment of data.payments) {
+          if (!payment.expenseId || !payment.period || typeof payment.amount !== 'number') {
+            throw new Error('El archivo contiene pagos con formato inválido');
+          }
+        }
+        
+        // Validar settings si existe
+        if (data.settings && (typeof data.settings !== 'object' || !data.settings.currencySymbol)) {
+          throw new Error('La configuración tiene formato inválido');
+        }
+        
+        // Validar incomes si existe
+        if (data.incomes && !Array.isArray(data.incomes)) {
+          throw new Error('El campo "incomes" debe ser un array');
+        }
+        
+        // Si todas las validaciones pasan, aplicar los datos
+        setExpenses(data.expenses);
+        setPayments(data.payments);
+        if (data.settings) setSettings(data.settings);
+        if (data.incomes) setIncomes(data.incomes);
+        
+        toast({ 
+          title: "Datos restaurados correctamente",
+          description: `${data.expenses.length} gastos y ${data.payments.length} pagos importados`
+        });
+      } catch (err: any) {
+        console.error('Error importando backup:', err);
+        toast({ 
+          title: "Error al importar", 
+          description: err.message || "No se pudo leer el archivo o el formato es inválido", 
+          variant: "destructive" 
+        });
       }
+    };
+    reader.onerror = () => {
+      toast({ 
+        title: "Error de lectura", 
+        description: "No se pudo leer el archivo seleccionado", 
+        variant: "destructive" 
+      });
     };
     reader.readAsText(file);
 

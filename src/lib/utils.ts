@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { CATEGORIES, AppSettings } from "@/lib/types";
+import { escapeCSV } from "./security";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -42,6 +43,18 @@ export function formatCurrencySimple(amount: number, currencySymbol: string = "$
   return `${currencySymbol}${formatted}`;
 }
 
+/**
+ * Valida que un día del mes sea válido (1-31) y lo ajusta si es necesario
+ * @param day - Día del mes a validar
+ * @returns Día válido ajustado al rango 1-28 mínimo garantizado
+ */
+export function validateDueDay(day: number): number {
+  if (day == null || isNaN(day)) return 1;
+  // Ajustar días inválidos (>28 para seguridad, ya que febrero tiene 28/29)
+  // Si el usuario puso 30 o 31, lo mantenemos pero JavaScript lo ajustará automáticamente
+  return Math.max(1, Math.min(31, day));
+}
+
 export function getExpenseStatus(
   expense: { id: string; dueDay?: number; isActive: boolean },
   payments: { expenseId: string; period: string }[],
@@ -58,7 +71,15 @@ export function getExpenseStatus(
   if (expense.dueDay == null) return "pending";
 
   const now = new Date();
-  const dueDate = new Date(now.getFullYear(), now.getMonth(), expense.dueDay);
+  // Validar y ajustar el día de vencimiento
+  const validDueDay = validateDueDay(expense.dueDay);
+  
+  // Crear fecha de vencimiento manejando meses con menos días
+  // Si dueDay es 31 y el mes tiene 30 días, JavaScript ajusta al mes siguiente
+  // Para evitar esto, usamos el último día del mes si dueDay excede los días del mes
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const adjustedDueDay = Math.min(validDueDay, daysInMonth);
+  const dueDate = new Date(now.getFullYear(), now.getMonth(), adjustedDueDay);
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const diffDays = Math.ceil(
     (dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
@@ -175,7 +196,8 @@ export function paymentsToCSV(payments: any[], expenses: any[], currencySymbol: 
     const category = expense?.category || "Desconocido";
     const name = expense?.name || "Desconocido";
     const date = new Date(p.paymentDate).toLocaleDateString("es-CO");
-    return `${date},"${name}",${category},${p.amount},${p.period},"${p.notes || ""}"`;
+    // Usar escapeCSV para prevenir inyección de fórmulas y manejar comillas correctamente
+    return `${date},${escapeCSV(name)},${escapeCSV(category)},${p.amount},${escapeCSV(p.period)},${escapeCSV(p.notes || "")}`;
   });
   return [header, ...rows].join("\n");
 }

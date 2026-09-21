@@ -252,12 +252,12 @@ export default function IncomeManager({ incomes, setIncomes, payments, currencyS
                             {income.description && <p className="text-xs text-muted-foreground truncate">{income.description}</p>}
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950" onClick={() => openEditDialog(income)} title="Editar ingreso">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950" onClick={() => openEditDialog(income)} title="Editar ingreso" aria-label={`Editar ingreso ${income.name}`}>
                               <Pencil className="h-4 w-4" />
                             </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8"><MoreVertical className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="Más opciones"><MoreVertical className="h-4 w-4" /></Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem onClick={() => toggleActive(income.id)}>

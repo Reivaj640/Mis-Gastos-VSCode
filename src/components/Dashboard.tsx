@@ -38,6 +38,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { EmptyState } from "@/components/EmptyState";
 import { Expense, Payment, Income, AppSettings, INCOME_COLORS } from "@/lib/types";
 import {
   formatCurrencySimple,
@@ -148,14 +149,22 @@ function CollapsibleSection({
 export default function Dashboard({ expenses, payments, incomes, settings, onNavigate }: DashboardProps) {
   const currentPeriod = getCurrentPeriod();
 
-  const stats = useMemo(() => {
-    const activeExpenses = expenses.filter((e) => e.isActive);
-    const totalMonthly = activeExpenses.reduce((sum, e) => sum + e.amount, 0);
+  // Memoize filtered data first to avoid recalculating in multiple useMemo hooks
+  const activeExpenses = useMemo(() => expenses.filter((e) => e.isActive), [expenses]);
+  const currentPayments = useMemo(() => payments.filter((p) => p.period === currentPeriod), [payments, currentPeriod]);
+  const activeIncomes = useMemo(() => incomes.filter((i) => i.isActive), [incomes]);
 
-    const currentPayments = payments.filter((p) => p.period === currentPeriod);
+  // Separate memoized calculations for better performance
+  const totals = useMemo(() => {
+    const totalMonthly = activeExpenses.reduce((sum, e) => sum + e.amount, 0);
     const totalPaid = currentPayments.reduce((sum, p) => sum + p.amount, 0);
     const totalPending = totalMonthly - totalPaid;
+    const completionPercentage = totalMonthly > 0 ? Math.round((totalPaid / totalMonthly) * 100) : 0;
 
+    return { totalMonthly, totalPaid, totalPending, completionPercentage };
+  }, [activeExpenses, currentPayments]);
+
+  const expenseStatuses = useMemo(() => {
     const overdueExpenses = activeExpenses.filter((e) =>
       getExpenseStatus(e, payments, settings.alertDays, currentPeriod) === "overdue"
     );
@@ -169,14 +178,22 @@ export default function Dashboard({ expenses, payments, incomes, settings, onNav
       getExpenseStatus(e, payments, settings.alertDays, currentPeriod) === "upcoming"
     );
 
-    const completionPercentage = totalMonthly > 0 ? Math.round((totalPaid / totalMonthly) * 100) : 0;
+    return {
+      overdueCount: overdueExpenses.length,
+      pendingCount: pendingExpenses.length,
+      paidCount: paidExpenses.length,
+      upcomingCount: upcomingExpenses.length,
+    };
+  }, [activeExpenses, payments, settings.alertDays, currentPeriod]);
 
-    const recentPayments = [...payments]
-      .filter((p) => p.period === currentPeriod)
+  const recentPayments = useMemo(() => {
+    return [...currentPayments]
       .sort((a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime())
       .slice(0, 5);
+  }, [currentPayments]);
 
-    const allCommitments = activeExpenses
+  const allCommitments = useMemo(() => {
+    return activeExpenses
       .map((e) => ({
         expense: e,
         status: getExpenseStatus(e, payments, settings.alertDays, currentPeriod),
@@ -188,9 +205,9 @@ export default function Dashboard({ expenses, payments, incomes, settings, onNav
         if (diff !== 0) return diff;
         return (a.expense.dueDay ?? 99) - (b.expense.dueDay ?? 99);
       });
+  }, [activeExpenses, payments, settings.alertDays, currentPeriod]);
 
-    // Income balances
-    const activeIncomes = incomes.filter((i) => i.isActive);
+  const incomeStats = useMemo(() => {
     const incomeBalances = activeIncomes.map((income) => {
       const incPayments = currentPayments.filter((p) => p.payerId === income.id);
       const totalCharged = incPayments.reduce((sum, p) => sum + p.amount, 0);
@@ -204,25 +221,22 @@ export default function Dashboard({ expenses, payments, incomes, settings, onNav
     const totalIncomeRemaining = totalIncome - totalCharged;
 
     return {
-      totalMonthly,
-      totalPaid,
-      totalPending,
-      overdueCount: overdueExpenses.length,
-      pendingCount: pendingExpenses.length,
-      paidCount: paidExpenses.length,
-      upcomingCount: upcomingExpenses.length,
-      completionPercentage,
-      recentPayments,
-      allCommitments,
-      activeCount: activeExpenses.length,
-      // Income stats
       incomeBalances,
       totalIncome,
       totalCharged,
       totalIncomeRemaining,
       activeIncomesCount: activeIncomes.length,
     };
-  }, [expenses, payments, incomes, settings.alertDays, currentPeriod]);
+  }, [activeIncomes, currentPayments]);
+
+  const stats = {
+    ...totals,
+    ...expenseStatuses,
+    recentPayments,
+    allCommitments,
+    activeCount: activeExpenses.length,
+    ...incomeStats,
+  };
 
   const cs = settings.currencySymbol;
   const unpaidCommitments = stats.allCommitments.filter((c) => c.status !== "paid");
@@ -433,22 +447,13 @@ export default function Dashboard({ expenses, payments, incomes, settings, onNav
           }
         >
           {stats.incomeBalances.length === 0 ? (
-            <div className="text-center py-8">
-              <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-50" />
-              <p className="text-sm text-muted-foreground">No hay ingresos registrados</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Agrega fuentes de ingreso para ver saldos
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-3 gap-1"
-                onClick={() => onNavigate("incomes")}
-              >
-                Agregar Ingreso
-                <ArrowRight className="h-3 w-3" />
-              </Button>
-            </div>
+            <EmptyState
+              icon={Users}
+              title="No hay ingresos registrados"
+              description="Agrega fuentes de ingreso para ver saldos y hacer seguimiento a tus entradas de dinero"
+              actionLabel="Agregar Ingreso"
+              onAction={() => onNavigate("incomes")}
+            />
           ) : (
             <div className="space-y-3">
               {/* Global summary mini */}
