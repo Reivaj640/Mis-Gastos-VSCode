@@ -226,7 +226,7 @@ export default function PaymentForm({ expenses, payments, incomes, setPayments, 
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="amount">
                         <DollarSign className="h-3 w-3 inline mr-1" />
@@ -252,17 +252,18 @@ export default function PaymentForm({ expenses, payments, incomes, setPayments, 
                         onChange={(e) => setPaymentDate(e.target.value)}
                       />
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="period">Período (YYYY-MM)</Label>
+                      <Input
+                        id="period"
+                        type="month"
+                        value={period}
+                        onChange={(e) => setPeriod(e.target.value)}
+                      />
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="period">Período (YYYY-MM)</Label>
-                    <Input
-                      id="period"
-                      type="month"
-                      value={period}
-                      onChange={(e) => setPeriod(e.target.value)}
-                    />
-                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
 
                   {/* Income selector */}
                   <div className="space-y-2">
@@ -321,6 +322,7 @@ export default function PaymentForm({ expenses, payments, incomes, setPayments, 
                       rows={2}
                     />
                   </div>
+                  </div>
 
                   <Button
                     className="w-full"
@@ -354,6 +356,7 @@ export default function PaymentForm({ expenses, payments, incomes, setPayments, 
                 </p>
               ) : (
                 <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-1">
                   {payableExpenses.map((expense) => (
                     <label
                       key={expense.id}
@@ -374,6 +377,7 @@ export default function PaymentForm({ expenses, payments, incomes, setPayments, 
                       </span>
                     </label>
                   ))}
+                  </div>
 
                   <Separator className="my-3" />
 

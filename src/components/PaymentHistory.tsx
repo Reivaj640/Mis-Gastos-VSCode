@@ -386,13 +386,13 @@ export default function PaymentHistory({ expenses, payments, incomes, setPayment
 
           <motion.div variants={containerVariants} initial="hidden" animate="show">
             {filteredPayments.length === 0 ? (
-              <Card className="border-none shadow-sm">
+              <Card className="border-none shadow-sm col-span-full">
                 <CardContent className="p-8 text-center">
                   <p className="text-muted-foreground">No se encontraron pagos</p>
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-2">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-2">
                 {filteredPayments.map((payment) => {
                   const expense = expenses.find((e) => e.id === payment.expenseId);
                   const Icon = expense ? (categoryIcons[expense.category] || Tag) : Tag;

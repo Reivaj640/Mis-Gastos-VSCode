@@ -232,6 +232,7 @@ export default function Settings({
         </p>
       </motion.div>
 
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
       {/* Theme */}
       <motion.div variants={itemVariants}>
         <Card className="border-none shadow-sm">
@@ -385,14 +386,10 @@ export default function Settings({
         </Card>
       </motion.div>
 
-      <Separator />
-
       {/* In-App Update */}
       <motion.div variants={itemVariants}>
         <UpdateManager />
       </motion.div>
-
-      <Separator />
 
       {/* Data Management */}
       <motion.div variants={itemVariants}>
@@ -445,6 +442,7 @@ export default function Settings({
           </CardContent>
         </Card>
       </motion.div>
+      </div>
 
       {/* Clear Data Confirmation */}
       <Dialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>

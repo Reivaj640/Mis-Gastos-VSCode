@@ -338,8 +338,8 @@ export default function Dashboard({ expenses, payments, incomes, settings, onNav
         </Card>
       </motion.div>
 
-      {/* ===== SIDE-BY-SIDE: Compromisos + Saldos por Responsable ===== */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      {/* ===== SIDE-BY-SIDE: Compromisos + Saldos por Responsable + Pagos ===== */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
         {/* LEFT: Compromisos del Mes */}
         <CollapsibleSection
           title="Compromisos del Mes"
@@ -546,43 +546,8 @@ export default function Dashboard({ expenses, payments, incomes, settings, onNav
             </div>
           )}
         </CollapsibleSection>
-      </motion.div>
 
-      {/* Summary footer for unpaid */}
-      {unpaidCommitments.length > 0 && (
-        <motion.div variants={itemVariants}>
-          <Card className="border-none shadow-sm bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20">
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-                    Te faltan {unpaidCommitments.length} compromiso{unpaidCommitments.length !== 1 ? "s" : ""} por cumplir
-                  </p>
-                  <p className="text-xs text-amber-700/70 dark:text-amber-400/70 mt-0.5">
-                    Restante: <strong>{formatCurrencySimple(stats.totalPending, cs)}</strong>
-                    {stats.overdueCount > 0 && (
-                      <span className="text-red-600 dark:text-red-400 ml-2">
-                        · {stats.overdueCount} vencido{stats.overdueCount !== 1 ? "s" : ""}
-                      </span>
-                    )}
-                  </p>
-                </div>
-                <Button
-                  size="sm"
-                  onClick={() => onNavigate("payment")}
-                  className="shrink-0 gap-1"
-                >
-                  Ir a pagar
-                  <ArrowRight className="h-3 w-3" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
-
-      {/* ===== Pagos Recientes (collapsible, default closed) ===== */}
-      <motion.div variants={itemVariants}>
+        {/* ===== Pagos Recientes (collapsible, default closed) ===== */}
         <CollapsibleSection
           title="Pagos Realizados"
           icon={
@@ -646,6 +611,39 @@ export default function Dashboard({ expenses, payments, incomes, settings, onNav
           )}
         </CollapsibleSection>
       </motion.div>
+
+      {/* Summary footer for unpaid */}
+      {unpaidCommitments.length > 0 && (
+        <motion.div variants={itemVariants}>
+          <Card className="border-none shadow-sm bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20">
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                    Te faltan {unpaidCommitments.length} compromiso{unpaidCommitments.length !== 1 ? "s" : ""} por cumplir
+                  </p>
+                  <p className="text-xs text-amber-700/70 dark:text-amber-400/70 mt-0.5">
+                    Restante: <strong>{formatCurrencySimple(stats.totalPending, cs)}</strong>
+                    {stats.overdueCount > 0 && (
+                      <span className="text-red-600 dark:text-red-400 ml-2">
+                        · {stats.overdueCount} vencido{stats.overdueCount !== 1 ? "s" : ""}
+                      </span>
+                    )}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => onNavigate("payment")}
+                  className="shrink-0 gap-1"
+                >
+                  Ir a pagar
+                  <ArrowRight className="h-3 w-3" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
     </motion.div>
   );
 }

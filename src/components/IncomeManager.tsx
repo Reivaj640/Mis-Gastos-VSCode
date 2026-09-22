@@ -231,7 +231,7 @@ export default function IncomeManager({ incomes, setIncomes, payments, currencyS
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
               {incomeBalances.map(({ income, totalCharged, remaining, percentage, paymentCount }) => {
                 const colors = getColorClasses(income.color);
                 const isOverBudget = remaining < 0;

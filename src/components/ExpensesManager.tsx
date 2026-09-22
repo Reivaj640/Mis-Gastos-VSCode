@@ -255,11 +255,11 @@ const handleSave = () => {
         variants={containerVariants}
         initial="hidden"
         animate="show"
-        className="space-y-2"
+        className="grid grid-cols-1 xl:grid-cols-2 gap-2"
       >
         <AnimatePresence>
           {filteredExpenses.length === 0 ? (
-            <Card className="border-none shadow-sm">
+            <Card className="border-none shadow-sm col-span-full">
               <CardContent className="p-8 text-center">
                 <Receipt className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground">No se encontraron gastos</p>

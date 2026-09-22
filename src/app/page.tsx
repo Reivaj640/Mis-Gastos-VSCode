@@ -252,7 +252,7 @@ const overdueCount = expenses
           />
 
           <main className="flex-1 min-w-0 h-screen overflow-y-auto">
-            <div className="max-w-4xl mx-auto p-4 md:p-6 lg:p-8 pb-24 lg:pb-8">
+            <div className="w-full p-4 md:p-6 lg:p-8 xl:p-10 pb-24 lg:pb-8">
               <AlertBanner
                 expenses={expenses}
                 payments={payments}

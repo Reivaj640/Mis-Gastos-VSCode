@@ -47,4 +47,6 @@ htmlcov/
 *.tmp
 *.temp
 .DS_Store
-```
+
+# TypeScript incremental build info
+*.tsbuildinfo
