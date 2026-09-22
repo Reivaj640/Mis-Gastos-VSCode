@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 
 const OUT_DIR = path.resolve(__dirname, "..", "out");
-const VERSION_FILE = path.resolve(__dirname, "..", "src", "lib", "version.ts");
+const PACKAGE_FILE = path.resolve(__dirname, "..", "package.json");
 
 const EXCLUDE_PATTERNS = [
   /\.txt$/,
@@ -24,10 +24,9 @@ function parseArgs(argv) {
 }
 
 function readAppVersion() {
-  const content = fs.readFileSync(VERSION_FILE, "utf-8");
-  const match = content.match(/APP_VERSION\s*=\s*"([^"]+)"/);
-  if (!match) throw new Error("No se encontró APP_VERSION en " + VERSION_FILE);
-  return match[1];
+  const pkg = JSON.parse(fs.readFileSync(PACKAGE_FILE, "utf-8"));
+  if (!pkg.version) throw new Error("No se encontró 'version' en " + PACKAGE_FILE);
+  return pkg.version;
 }
 
 function isExcluded(relPath) {

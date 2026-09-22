@@ -1,6 +1,6 @@
 # 💰 Mis Gastos - Control Inteligente de Finanzas Personales
 
-[![Versión](https://img.shields.io/badge/versión-2.0.0-blue.svg)](https://github.com/tu-usuario/mis-gastos/releases/tag/v2.0.0)
+[![Versión](https://img.shields.io/badge/versión-2.1.3-blue.svg)](https://github.com/Reivaj640/Mis-Gastos-VSCode/releases/tag/v2.1.3)
 [![Tecnología](https://img.shields.io/badge/Next.js-16-black?logo=next.js)](https://nextjs.org/)
 [![React](https://img.shields.io/badge/React-19-61dafb?logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript)](https://www.typescriptlang.org/)
@@ -26,7 +26,7 @@ Utiliza un stack tecnológico de vanguardia (**Next.js 16, React 19, TailwindCSS
 
 ---
 
-## 🚀 Características Principales (v2.0)
+## 🚀 Características Principales (v2.1)
 
 ### 📐 Layout Adaptativo (Full-Width)
 - **Sin límite de ancho artificial:** El contenido aprovecha todo el espacio disponible de la pantalla en escritorio.

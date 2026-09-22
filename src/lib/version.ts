@@ -1,4 +1,6 @@
-export const APP_VERSION = "2.1.3";
+import pkg from "../../package.json";
+
+export const APP_VERSION = pkg.version;
 export const APP_BUILD_DATE = "2026-05-26";
 
 /**
