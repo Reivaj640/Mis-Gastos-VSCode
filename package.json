@@ -11,13 +11,8 @@
     "preview:network": "node scripts/serve-network.cjs",
     "build:exe": "npm run build:static && electron-builder --win --x64",
     "release": "npm run build:static && electron-builder --win --publish always",
-    "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",
     "electron": "electron .",
     "lint": "eslint .",
-    "db:push": "prisma db push",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:reset": "prisma migrate reset",
     "build:update": "node scripts/generate-update.js"
   },
   "build": {
