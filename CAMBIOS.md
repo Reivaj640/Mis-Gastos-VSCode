@@ -183,4 +183,29 @@ anotado solo por limpieza futura.
 
 ---
 
+## 2026-10-02 — Cierre de la sesión: trabajo pendiente guardado y archivo AGENT.MD
+
+### 1) Se guardó en Git lo que quedó sin commit
+
+La solución de red (servidor `scripts/serve-network.cjs`, comando
+`preview:network` y la actualización de este registro) estaba probada y
+confirmada, pero **no se había creado el punto de retorno en Git**.
+
+- **Commit:** `99a561d` — "Solucionar carga por red local con comando preview:network".
+- **Estado:** la rama `main` quedó **sin cambios pendientes de guardar**.
+
+### 2) Se creó `AGENT.MD` (nuevo archivo)
+
+- **Por qué:** se necesita un tablero de estado que se actualice en cada
+  sesión, para que cualquier agente que entre sepa al instante en qué
+  queda el proyecto sin tener que reconstruir el historial completo.
+- **Qué contiene:** última sesión, estado general de las piezas, historial
+  de sesiones con sus commits, pendientes detectados y las instrucciones
+  para mantenerlo al día.
+- **No sustituye a nadie:** `CAMBIOS.md` sigue siendo el registro de qué
+  cambió y por qué; `AGENTS.md` sigue siendo la ficha técnica.
+- **Costo:** cero riesgo — es un documento, no toca código ni datos.
+
+---
+
 *Proyecto original: Reivaj640 / Mis-Gastos-VSCode · Licencia MIT · Atribución conservada*
