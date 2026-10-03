@@ -6,11 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Search, X, Filter, Calendar, DollarSign } from 'lucide-react';
-import type { Expense, Payment } from '@/types';
+import type { Expense } from '@/lib/types';
 
 interface AdvancedSearchProps {
   expenses: Expense[];
-  payments: Payment[];
   onFilterChange: (filters: SearchFilters) => void;
 }
 
@@ -34,7 +33,7 @@ const defaultFilters: SearchFilters = {
   endDate: '',
 };
 
-export function AdvancedSearch({ expenses, payments, onFilterChange }: AdvancedSearchProps) {
+export function AdvancedSearch({ expenses, onFilterChange }: AdvancedSearchProps) {
   const [filters, setFilters] = useState<SearchFilters>(defaultFilters);
   const [showFilters, setShowFilters] = useState(false);
 

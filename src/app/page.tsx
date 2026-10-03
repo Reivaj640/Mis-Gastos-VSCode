@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { ThemeProvider } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
-import { Wallet } from "lucide-react";
+import { Wallet, Undo2, Redo2 } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
+import { useAppStore } from "@/store/useAppStore";
 import { useToast } from "@/hooks/use-toast";
 import { Expense, Payment, Income, AppSettings, ViewType } from "@/lib/types";
 import { createDemoExpenses, createDemoPayments, createDemoIncomes, defaultSettings } from "@/lib/demo-data";
@@ -26,10 +27,135 @@ export default function Home() {
   const [initError, setInitError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const [expenses, setExpenses] = useLocalStorage<Expense[]>("expenses", []);
-  const [payments, setPayments] = useLocalStorage<Payment[]>("payments", []);
-  const [incomes, setIncomes] = useLocalStorage<Income[]>("incomes", []);
-  const [settings, setSettings] = useLocalStorage<AppSettings>("appSettings", defaultSettings);
+  const [expensesLS, setExpensesLS, expensesReady] = useLocalStorage<Expense[]>("expenses", []);
+  const [paymentsLS, setPaymentsLS, paymentsReady] = useLocalStorage<Payment[]>("payments", []);
+  const [incomesLS, setIncomesLS, incomesReady] = useLocalStorage<Income[]>("incomes", []);
+  const [settingsLS, setSettingsLS, settingsReady] = useLocalStorage<AppSettings>("appSettings", defaultSettings);
+
+  // ── Puente con el store (pendiente #6) ──────────────────────────────
+  // El store mantiene los datos en memoria + historial de deshacer/rehacer;
+  // useLocalStorage sigue siendo el ÚNICO destino de escritura (mismas
+  // claves, mismo formato encriptado de siempre).
+  const sReady = useAppStore((s) => s.isInitialized);
+  const sExpenses = useAppStore((s) => s.expenses);
+  const sPayments = useAppStore((s) => s.payments);
+  const sIncomes = useAppStore((s) => s.incomes);
+  const sSettings = useAppStore((s) => s.settings);
+  const canUndo = useAppStore((s) => s.canUndo);
+  const canRedo = useAppStore((s) => s.canRedo);
+
+  const lastPersisted = useRef<{
+    expenses: Expense[];
+    payments: Payment[];
+    incomes: Income[];
+    settings: AppSettings;
+  } | null>(null);
+
+  // 1) Hidratación: cuando las 4 claves terminaron de desencriptar
+  useEffect(() => {
+    if (useAppStore.getState().isInitialized) return;
+    if (!expensesReady || !paymentsReady || !incomesReady || !settingsReady) return;
+    useAppStore.getState().initialize({
+      expenses: expensesLS,
+      payments: paymentsLS,
+      incomes: incomesLS,
+      settings: settingsLS,
+    });
+    lastPersisted.current = {
+      expenses: expensesLS,
+      payments: paymentsLS,
+      incomes: incomesLS,
+      settings: settingsLS,
+    };
+  }, [expensesReady, paymentsReady, incomesReady, settingsReady, expensesLS, paymentsLS, incomesLS, settingsLS]);
+
+  // 2) Persistencia: store → encriptado, solo lo que realmente cambió
+  //    (comparación por CONTENIDO: deshacer/rehacer restaura copias, y una
+  //    copia con el mismo contenido no debe reescribir la clave cifrada)
+  useEffect(() => {
+    const lp = lastPersisted.current;
+    if (!lp || !useAppStore.getState().isInitialized) return;
+    const igual = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+    if (!igual(lp.expenses, sExpenses)) {
+      lp.expenses = sExpenses;
+      setExpensesLS(sExpenses);
+    }
+    if (!igual(lp.payments, sPayments)) {
+      lp.payments = sPayments;
+      setPaymentsLS(sPayments);
+    }
+    if (!igual(lp.incomes, sIncomes)) {
+      lp.incomes = sIncomes;
+      setIncomesLS(sIncomes);
+    }
+    if (!igual(lp.settings, sSettings)) {
+      lp.settings = sSettings;
+      setSettingsLS(sSettings);
+    }
+  }, [sExpenses, sPayments, sIncomes, sSettings, setExpensesLS, setPaymentsLS, setIncomesLS, setSettingsLS]);
+
+  // 3) Escrituras de las vistas → acciones del store (quedan en el historial)
+  const setExpenses = useCallback(
+    (v: Expense[] | ((val: Expense[]) => Expense[])) => {
+      const s = useAppStore.getState();
+      s.setExpenses(typeof v === "function" ? v(s.expenses) : v);
+    },
+    []
+  );
+  const setPayments = useCallback(
+    (v: Payment[] | ((val: Payment[]) => Payment[])) => {
+      const s = useAppStore.getState();
+      s.setPayments(typeof v === "function" ? v(s.payments) : v);
+    },
+    []
+  );
+  const setIncomes = useCallback(
+    (v: Income[] | ((val: Income[]) => Income[])) => {
+      const s = useAppStore.getState();
+      s.setIncomes(typeof v === "function" ? v(s.incomes) : v);
+    },
+    []
+  );
+  const setSettings = useCallback(
+    (v: AppSettings | ((val: AppSettings) => AppSettings)) => {
+      const s = useAppStore.getState();
+      s.setSettings(typeof v === "function" ? v(s.settings) : v);
+    },
+    []
+  );
+
+  // Deshacer/rehacer con teclado: 1 pulsación = 1 paso
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null;
+      if (
+        target &&
+        (target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT" ||
+          target.isContentEditable)
+      ) {
+        return; // no robar el Ctrl+Z dentro de campos de texto
+      }
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const k = e.key.toLowerCase();
+      if (k === "z" && !e.shiftKey) {
+        e.preventDefault();
+        useAppStore.getState().undo();
+      } else if (k === "y" || (k === "z" && e.shiftKey)) {
+        e.preventDefault();
+        useAppStore.getState().redo();
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  // Fuente de lectura: store tras la carga; antes, las claves (mismo dato)
+  const expenses = sReady ? sExpenses : expensesLS;
+  const payments = sReady ? sPayments : paymentsLS;
+  const incomes = sReady ? sIncomes : incomesLS;
+  const settings = sReady ? sSettings : settingsLS;
 
   // Robust initialization: reads localStorage directly, avoids race conditions
   useEffect(() => {
@@ -70,19 +196,20 @@ export default function Home() {
         localStorage.setItem("expenses", JSON.stringify(demoExpenses));
         localStorage.setItem("payments", JSON.stringify(demoPayments));
         localStorage.setItem("incomes", JSON.stringify(demoIncomes));
-        setExpenses(demoExpenses);
-        setPayments(demoPayments);
-        setIncomes(demoIncomes);
+        setExpensesLS(demoExpenses);
+        setPaymentsLS(demoPayments);
+        setIncomesLS(demoIncomes);
       }
 
       // Ensure incomes key exists even if old version didn't have it
       if (!rawIncomes) {
         const demoIncomes = createDemoIncomes();
         localStorage.setItem("incomes", JSON.stringify(demoIncomes));
-        setIncomes(demoIncomes);
+        setIncomesLS(demoIncomes);
       }
     } catch (err) {
       console.error("Initialization error:", err);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Inicialización única de arranque: el error solo se establece una vez al montar; no puede generar cascadas de render.
       setInitError("Error al cargar datos. Intenta recargar la página.");
     }
 
@@ -252,7 +379,7 @@ const overdueCount = expenses
           />
 
           <main className="flex-1 min-w-0 h-screen overflow-y-auto">
-            <div className="w-full p-4 md:p-6 lg:p-8 xl:p-10 pb-24 lg:pb-8">
+            <div className="w-full p-4 md:p-6 lg:p-8 xl:p-10 pb-24 md:pb-24 lg:pb-8 xl:pb-10">
               <AlertBanner
                 expenses={expenses}
                 payments={payments}
@@ -272,6 +399,31 @@ const overdueCount = expenses
                 </motion.div>
               </AnimatePresence>
             </div>
+
+            {(canUndo || canRedo) && (
+              <div className="fixed bottom-24 right-4 lg:bottom-6 lg:right-6 z-40 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => useAppStore.getState().undo()}
+                  disabled={!canUndo}
+                  title="Deshacer (Ctrl+Z)"
+                  aria-label="Deshacer"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-background/90 shadow-lg backdrop-blur transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-30"
+                >
+                  <Undo2 className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => useAppStore.getState().redo()}
+                  disabled={!canRedo}
+                  title="Rehacer (Ctrl+Y)"
+                  aria-label="Rehacer"
+                  className="flex h-11 w-11 items-center justify-center rounded-full border border-border bg-background/90 shadow-lg backdrop-blur transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-30"
+                >
+                  <Redo2 className="h-5 w-5" />
+                </button>
+              </div>
+            )}
           </main>
       </div>
       <Toaster richColors position="top-right" />

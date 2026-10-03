@@ -7,10 +7,6 @@ import {
   CalendarDays,
   FileText,
   DollarSign,
-  Sparkles,
-  Droplets, Zap, Flame, Wifi, Home, Tag,
-  Landmark, Heart, Clapperboard, ShieldCheck,
-  GraduationCap, Car, HeartPulse,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -35,7 +31,6 @@ import {
   getCategoryLabel,
   generateId,
 } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
 
 interface PaymentFormProps {
   expenses: Expense[];
@@ -46,7 +41,6 @@ interface PaymentFormProps {
 }
 
 export default function PaymentForm({ expenses, payments, incomes, setPayments, settings }: PaymentFormProps) {
-  const { toast } = useToast();
   const currentPeriod = getCurrentPeriod();
   const cs = settings.currencySymbol;
 
@@ -64,7 +58,6 @@ export default function PaymentForm({ expenses, payments, incomes, setPayments, 
   // Batch payment state
   const [batchMode, setBatchMode] = useState(false);
   const [batchSelections, setBatchSelections] = useState<string[]>([]);
-  const [batchStep, setBatchStep] = useState<"select" | "confirm">("select");
 
   const payableExpenses = useMemo(() => {
     return expenses.filter((e) => {
@@ -140,7 +133,6 @@ export default function PaymentForm({ expenses, payments, incomes, setPayments, 
     setShowConfirmation(true);
 
     setBatchSelections([]);
-    setBatchStep("select");
     setBatchMode(false);
   };
 
@@ -160,7 +152,6 @@ export default function PaymentForm({ expenses, payments, incomes, setPayments, 
           size="sm"
           onClick={() => {
             setBatchMode(false);
-            setBatchStep("select");
           }}
         >
           Pago Individual

@@ -31,7 +31,6 @@ import {
   ChevronDown,
   ChevronUp,
   Users,
-  TrendingDown,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -423,7 +422,7 @@ export default function Dashboard({ expenses, payments, incomes, settings, onNav
 
               {/* Collapsible: Paid commitments */}
               {paidItems.length > 0 && (
-                <CollapsiblePaidSection items={paidItems} expenses={expenses} cs={cs} customCategories={settings.customCategories} />
+                <CollapsiblePaidSection items={paidItems} cs={cs} customCategories={settings.customCategories} />
               )}
             </div>
           )}
@@ -651,12 +650,10 @@ export default function Dashboard({ expenses, payments, incomes, settings, onNav
 // Sub-component for collapsible paid items
 function CollapsiblePaidSection({
   items,
-  expenses,
   cs,
   customCategories,
 }: {
-  items: Array<{ expense: any; status: string; daysUntilDue: number }>;
-  expenses: any[];
+  items: Array<{ expense: Expense; status: string; daysUntilDue: number }>;
   cs: string;
   customCategories?: string[];
 }) {
@@ -666,7 +663,7 @@ function CollapsiblePaidSection({
     <div>
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-center gap-1 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        className="w-full min-h-11 lg:min-h-0 flex items-center justify-center gap-1 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
         {open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
         {items.length} pago{items.length !== 1 ? "s" : ""} realizado{items.length !== 1 ? "s" : ""}
@@ -683,7 +680,6 @@ function CollapsiblePaidSection({
             <div className="space-y-1.5 pb-1">
               {items.map((commitment) => {
                 const { expense } = commitment;
-                const Icon = categoryIcons[expense.category] || Tag;
 
                 return (
                   <div

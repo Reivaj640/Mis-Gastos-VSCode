@@ -3,36 +3,16 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { generateDataHash, validateDataIntegrity } from "@/lib/security";
 
-interface EncryptedData<T> {
+interface EncryptedData {
   data: string; // Datos encriptados en base64
   hash: string; // Hash para validación de integridad
   iv: string;   // Vector de inicialización
 }
 
 /**
- * Genera una clave de encriptación basada en el origen del documento
- * Esto previene que scripts de otros dominios accedan a los datos
- */
-function getEncryptionKey(): CryptoKey | null {
-  try {
-    const encoder = new TextEncoder();
-    const keyData = encoder.encode(window.location.origin + '__mis_gastos_key_v1');
-    return window.crypto.subtle.importKey(
-      'raw',
-      keyData,
-      { name: 'PBKDF2' },
-      false,
-      ['deriveBits', 'deriveKey']
-    ).then(key => key).catch(() => null);
-  } catch {
-    return null;
-  }
-}
-
-/**
  * Encripta datos usando Web Crypto API (AES-GCM)
  */
-async function encryptData<T>(data: T): Promise<EncryptedData<T> | null> {
+async function encryptData<T>(data: T): Promise<EncryptedData | null> {
   try {
     const encoder = new TextEncoder();
     const jsonString = JSON.stringify(data);
@@ -82,7 +62,7 @@ async function encryptData<T>(data: T): Promise<EncryptedData<T> | null> {
 /**
  * Desencripta datos usando Web Crypto API
  */
-async function decryptData<T>(encrypted: EncryptedData<T>): Promise<T | null> {
+async function decryptData<T>(encrypted: EncryptedData): Promise<T | null> {
   try {
     const decoder = new TextDecoder();
     const iv = new Uint8Array(atob(encrypted.iv).split('').map(c => c.charCodeAt(0)));
@@ -130,8 +110,9 @@ async function decryptData<T>(encrypted: EncryptedData<T>): Promise<T | null> {
   }
 }
 
-export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {
+export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void, boolean] {
   const [storedValue, setStoredValue] = useState<T>(initialValue);
+  const [isReady, setIsReady] = useState(false);
   const isHydrated = useRef(false);
   const isEncrypting = useRef(false);
 
@@ -145,7 +126,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
         if (item) {
           // Intentar desencriptar (nuevo formato)
           try {
-            const encrypted = JSON.parse(item) as EncryptedData<T>;
+            const encrypted = JSON.parse(item) as EncryptedData;
             if (encrypted.data && encrypted.hash && encrypted.iv) {
               const decrypted = await decryptData<T>(encrypted);
               if (decrypted !== null) {
@@ -163,6 +144,9 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
         }
       } catch (error) {
         console.error(`Error reading localStorage key "${key}":`, error);
+      } finally {
+        // Clave leída (o ausente): el valor ya está listo para hidratar
+        setIsReady(true);
       }
     };
     
@@ -203,5 +187,5 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
     }
   }, [key]);
 
-  return [storedValue, setValue];
+  return [storedValue, setValue, isReady];
 }

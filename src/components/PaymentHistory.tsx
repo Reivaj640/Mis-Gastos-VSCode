@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useMemo, useRef, memo } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   Search,
   Download,
@@ -12,10 +11,6 @@ import {
   Trash2,
   Wallet,
   Coffee,
-  X,
-  Filter,
-  Calendar,
-  DollarSign,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -107,11 +102,6 @@ export default function PaymentHistory({ expenses, payments, incomes, setPayment
   const [filterPeriod, setFilterPeriod] = useState<string>("all");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [searchName, setSearchName] = useState("");
-  const [searchMinAmount, setSearchMinAmount] = useState("");
-  const [searchMaxAmount, setSearchMaxAmount] = useState("");
-  const [searchStartDate, setSearchStartDate] = useState("");
-  const [searchEndDate, setSearchEndDate] = useState("");
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
 
   // Edit dialog state
@@ -138,29 +128,10 @@ export default function PaymentHistory({ expenses, payments, incomes, setPayment
           const expenseName = expense?.name || "";
           if (!expense || !expenseName.toLowerCase().includes(searchName.toLowerCase())) return false;
         }
-        if (searchMinAmount) {
-          const min = parseFloat(searchMinAmount);
-          if (p.amount < min) return false;
-        }
-        if (searchMaxAmount) {
-          const max = parseFloat(searchMaxAmount);
-          if (p.amount > max) return false;
-        }
-        if (searchStartDate) {
-          const start = new Date(searchStartDate);
-          const paymentDate = new Date(p.paymentDate);
-          if (paymentDate < start) return false;
-        }
-        if (searchEndDate) {
-          const end = new Date(searchEndDate);
-          end.setHours(23, 59, 59, 999);
-          const paymentDate = new Date(p.paymentDate);
-          if (paymentDate > end) return false;
-        }
         return true;
       })
       .sort((a, b) => new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime());
-  }, [payments, filterPeriod, filterCategory, searchName, searchMinAmount, searchMaxAmount, searchStartDate, searchEndDate, expenses]);
+  }, [payments, filterPeriod, filterCategory, searchName, expenses]);
 
   const categorySummary = useMemo(() => {
     const summary: Record<string, { count: number; total: number }> = {};
@@ -219,22 +190,8 @@ export default function PaymentHistory({ expenses, payments, incomes, setPayment
     };
   }, [payments]);
 
-  const resetFilters = () => {
-    setSearchName("");
-    setSearchMinAmount("");
-    setSearchMaxAmount("");
-    setSearchStartDate("");
-    setSearchEndDate("");
-    setFilterPeriod("all");
-    setFilterCategory("all");
-    setShowAdvancedFilters(false);
-  };
-
-  const hasActiveFilters = searchName || searchMinAmount || searchMaxAmount || searchStartDate || searchEndDate || filterCategory !== "all";
-
-
   const handleExportCSV = () => {
-    const csv = paymentsToCSV(filteredPayments, expenses, cs);
+    const csv = paymentsToCSV(filteredPayments, expenses);
     navigator.clipboard.writeText(csv).then(() => {
       toast({
         title: "Copiado al portapapeles",

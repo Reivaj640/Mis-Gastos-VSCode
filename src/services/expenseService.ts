@@ -1,4 +1,4 @@
-import { Expense, Payment } from '@/types';
+import { Expense, Payment } from '@/lib/types';
 
 /**
  * Servicio centralizado para lógica de negocio de gastos
@@ -40,13 +40,13 @@ export const expenseService = {
   /**
    * Calcula la fecha de vencimiento para un día específico en el período actual
    */
-  getDueDate: (dueDay: number, periodStart: Date): Date => {
+  getDueDate: (dueDay: number | undefined, periodStart: Date): Date => {
     const year = periodStart.getFullYear();
     const month = periodStart.getMonth();
     
     // Validar y ajustar el día según los días del mes
     const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const adjustedDay = Math.min(dueDay, daysInMonth);
+    const adjustedDay = Math.min(dueDay ?? daysInMonth, daysInMonth);
     
     const dueDate = new Date(year, month, adjustedDay);
     

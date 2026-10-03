@@ -115,14 +115,14 @@ class LoggerService {
     
     // En producción, podrías enviar a un servicio de monitoreo
     if (process.env.NODE_ENV === 'production') {
-      this.sendToMonitoring(entry);
+      this.sendToMonitoring();
     }
   }
   
   /**
    * Envía errores a servicio de monitoreo (placeholder)
    */
-  private sendToMonitoring(entry: LogEntry) {
+  private sendToMonitoring() {
     // TODO: Implementar envío a Sentry, LogRocket, o similar
     // Ejemplo: Sentry.captureException(entry.error, { tags: { context: entry.context } });
   }

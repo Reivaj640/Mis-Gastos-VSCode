@@ -1,6 +1,5 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { Expense, Payment, Income, AppSettings } from '@/types';
+import { Expense, Payment, Income, AppSettings } from '@/lib/types';
 
 interface AppState {
   // Datos
@@ -14,8 +13,9 @@ interface AppState {
   isInitialized: boolean;
   error: string | null;
   
-  // Historial para deshacer/rehacer
+  // Historial para deshacer/rehacer (1 acción = 1 paso)
   history: AppStateSnapshot[];
+  future: AppStateSnapshot[];
   historyIndex: number;
   canUndo: boolean;
   canRedo: boolean;
@@ -73,32 +73,33 @@ const createSnapshot = (state: AppState): AppStateSnapshot => ({
   settings: JSON.parse(JSON.stringify(state.settings)),
 });
 
-// Función auxiliar para agregar al historial
+// Función auxiliar: registra el estado previo a cada acción (1 acción = 1 entrada)
 const addToHistory = (state: AppState, snapshot: AppStateSnapshot) => {
-  const newHistory = state.history.slice(0, state.historyIndex + 1);
-  newHistory.push(snapshot);
-  
+  const newHistory = [...state.history, snapshot];
+
   if (newHistory.length > MAX_HISTORY_SIZE) {
     newHistory.shift();
   }
-  
+
   return {
     history: newHistory,
+    future: [], // una acción nueva invalida la rama de rehacer
     historyIndex: newHistory.length - 1,
-    canUndo: newHistory.length > 1,
+    canUndo: newHistory.length > 0,
     canRedo: false,
   };
 };
 
 export const useAppStore = create<AppState>()(
-  persist(
-    (set, get) => ({
+  (set, get) => ({
       // Estado inicial
       expenses: [],
       payments: [],
       incomes: [],
       settings: {
+        currencySymbol: '$',
         alertDays: 3,
+        customCategories: [],
         periodStartDay: 26,
         currency: 'CRC',
         locale: 'es-CR',
@@ -108,6 +109,7 @@ export const useAppStore = create<AppState>()(
       isInitialized: false,
       error: null,
       history: [],
+      future: [],
       historyIndex: -1,
       canUndo: false,
       canRedo: false,
@@ -249,7 +251,6 @@ export const useAppStore = create<AppState>()(
       
       // Acciones - Initialization
       initialize: (data) => {
-        const snapshot = createSnapshot(get());
         set({ 
           expenses: data.expenses || [],
           payments: data.payments || [],
@@ -258,7 +259,12 @@ export const useAppStore = create<AppState>()(
           isInitialized: true,
           isLoading: false,
           error: null,
-          ...addToHistory(get(), snapshot),
+          // Carga inicial: no genera historial (no se puede deshacer la carga)
+          history: [],
+          future: [],
+          historyIndex: -1,
+          canUndo: false,
+          canRedo: false,
         });
       },
       
@@ -268,7 +274,9 @@ export const useAppStore = create<AppState>()(
           payments: [],
           incomes: [],
           settings: {
+            currencySymbol: '$',
             alertDays: 3,
+            customCategories: [],
             periodStartDay: 26,
             currency: 'CRC',
             locale: 'es-CR',
@@ -278,6 +286,7 @@ export const useAppStore = create<AppState>()(
           isLoading: false,
           error: null,
           history: [],
+          future: [],
           historyIndex: -1,
           canUndo: false,
           canRedo: false,
@@ -286,34 +295,48 @@ export const useAppStore = create<AppState>()(
       
       // Acciones - Undo/Redo
       undo: () => {
-        const { history, historyIndex } = get();
-        if (historyIndex <= 0) return;
-        
-        const previousState = history[historyIndex - 1];
+        const { history, future } = get();
+        if (history.length === 0) return;
+
+        const current = createSnapshot(get());
+        const previousState = history[history.length - 1];
         set({
-          ...previousState,
-          historyIndex: historyIndex - 1,
-          canUndo: historyIndex - 1 > 0,
+          expenses: previousState.expenses,
+          payments: previousState.payments,
+          incomes: previousState.incomes,
+          settings: previousState.settings,
+          history: history.slice(0, -1),
+          future: [...future, current],
+          historyIndex: history.length - 2,
+          canUndo: history.length - 1 > 0,
           canRedo: true,
         });
       },
-      
+
       redo: () => {
-        const { history, historyIndex } = get();
-        if (historyIndex >= history.length - 1) return;
-        
-        const nextState = history[historyIndex + 1];
+        const { history, future } = get();
+        if (future.length === 0) return;
+
+        const current = createSnapshot(get());
+        const nextState = future[future.length - 1];
+        const newHistory = [...history, current];
         set({
-          ...nextState,
-          historyIndex: historyIndex + 1,
+          expenses: nextState.expenses,
+          payments: nextState.payments,
+          incomes: nextState.incomes,
+          settings: nextState.settings,
+          history: newHistory,
+          future: future.slice(0, -1),
+          historyIndex: newHistory.length - 1,
           canUndo: true,
-          canRedo: historyIndex + 1 < history.length - 1,
+          canRedo: future.length - 1 > 0,
         });
       },
-      
+
       clearHistory: () => {
         set({
           history: [],
+          future: [],
           historyIndex: -1,
           canUndo: false,
           canRedo: false,
@@ -323,23 +346,5 @@ export const useAppStore = create<AppState>()(
       // Acciones - Error handling
       setError: (error) => set({ error }),
       clearError: () => set({ error: null }),
-    }),
-    {
-      name: 'mis-gastos-storage',
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({
-        expenses: state.expenses,
-        payments: state.payments,
-        incomes: state.incomes,
-        settings: state.settings,
-      }),
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-          state.isInitialized = true;
-          state.isLoading = false;
-          state.clearHistory(); // Limpiar historial al recargar
-        }
-      },
-    }
-  )
+    })
 );
