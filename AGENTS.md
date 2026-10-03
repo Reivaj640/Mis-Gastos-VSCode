@@ -22,6 +22,14 @@ Archivo de contexto para cualquier agente que trabaje en este proyecto.
 > app desde el celular u otro computador, usa `npm run build` + `npm run
 > preview:network`. El porqué está en `CAMBIOS.md`.
 
+> 🔌 **REGLA DE PUERTOS (obligatoria para todo agente):** la app corre en
+> **3000** (`dev`) o **4000** (`preview:network`). Todo proceso sigue el ciclo:
+> **se lanza → ocupa el puerto → se cierra → desocupa el puerto**. Al terminar
+> de usar cualquier servidor, **detén el proceso y verifica que el puerto
+> quede libre** (`Get-NetTCPConnection -LocalPort 4000 -State Listen`).
+> **Prohibido usar puertos alternos** como solución de largo plazo y dejar
+> procesos encendidos al cerrar una sesión.
+
 ---
 
 ## 📁 Estructura del proyecto

@@ -28,8 +28,10 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
    actualizaciones oficiales; respaldo de copia ante error 502/503 → commit `9e04323`.
 3. **Pruebas en navegador real:** frescura ✅ · carga normal ✅ · **app completa
    con el servidor apagado** ✅ · build ✅.
-4. Detectado: servidor Next huérfano (PID 23240, `::1:4000`, de la sesión
-   anterior) — **no tocado, pendiente de decisión**.
+4. **Regla de puertos (del usuario):** todo proceso = *se lanza → ocupa el
+   puerto → se cierra → desocupa*. Detenido el servidor Next huérfano (PID
+   23240) y verificado el ciclo completo en el **puerto 4000** (ocupar →
+   servir → cerrar → **libre**). Puertos alternos prohibidos.
 
 ### Sesiones anteriores
 1. Solución de red guardada + creación de `AGENT.MD` → `99a561d`, `9ba8d8c`.
@@ -46,7 +48,7 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | Enlace al compartir (OpenGraph) | ✅ Corregido | `metadataBase` puesta; sin imágenes rotas |
 | Revisión de errores (`npm run lint`) | ⚠️ No funciona | Nunca funcionó: falta la configuración de ESLint 9 → pendiente #8 |
 | Service worker (`public/sw.js` v3) | ✅ Corregido y probado | Primero la red (versión fresca) + copia sin conexión. Commit `9e04323` |
-| Servidor Next huérfano (PID 23240) | ⚠️ Ajeno | Escucha en `::1:4000` desde la sesión anterior; interfiere con `localhost:4000`. **No tocar sin decisión del usuario** |
+| Servidor Next huérfano (PID 23240) | ✅ Detenido | Puerto `::1:4000` liberado. **Regla nueva:** todo proceso = se lanza → ocupa el puerto → se cierra → desocupa. Sin puertos alternos |
 | Instalador Windows (`npm run build:exe`) | ⬜ No probado en esta sesión | Genera `.exe` en `dist-electron/` |
 | Control de versiones (Git) | ✅ Activo | Rama `main`, **sin cambios sin guardar** |
 | Datos del usuario | ✅ Intactos | Encriptados en el navegador (AES-GCM), no se tocaron |
@@ -78,7 +80,7 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | 6 | Zustand (`src/store/useAppStore.ts`) no está en uso | Nulo | Reservado por el prompt para el futuro "deshacer/rehacer". **No borrar** |
 | 7 | `next.config.ts` ignora errores de tipado (`ignoreBuildErrors: true`) | Medio a futuro | Heredado del original. Un error de tipo pasaría desapercibido en el build |
 | 8 | `npm run lint` siempre falla | Bajo | Falta la configuración de ESLint 9 (`eslint.config.*`). Ojo: `AGENTS.md` decía que funcionaba — ya quedó corregido |
-| 9 | Servidor Next huérfano (PID 23240, `::1:4000`) | Bajo-medio | De la sesión anterior (19:57). Captura `localhost:4000` antes que `preview:network`. **Matar solo con decisión del usuario** |
+| 9 | ~~Servidor Next huérfano (PID 23240, `::1:4000`)~~ | — | ✅ **Resuelto:** detenido con aprobación del usuario; puerto 4000 verificado libre |
 
 ### Resueltos en la Etapa 2 (2026-10-02, commit `9e04323`)
 

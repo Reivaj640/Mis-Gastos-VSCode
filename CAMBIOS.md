@@ -300,4 +300,28 @@ en HTTP de red), por lo que el riesgo era local.
 
 ---
 
+## 2026-10-02 — Cierre: servidor huérfano eliminado y regla de puertos (pendiente #9 resuelto)
+
+**Decisión del usuario:** la app corre en su puerto habitual (**4000**) y todo
+proceso debe cumplir el ciclo **se lanza → ocupa el puerto → se cierra →
+desocupa el puerto**. Prohibido usar puertos alternos como solución permanente
+ni dejar procesos encendidos al terminar una sesión.
+
+### Acciones
+
+| Acción | Resultado |
+|---|---|
+| Detener el servidor Next huérfano (PID 23240, `::1:4000`, arrancó 19:57 de la sesión anterior) | ✅ Detenido |
+| Verificar puerto 4000 libre | ✅ **Libre** |
+| **Ciclo completo en 4000:** lanzar `preview:network` → ocupa (PID 21752) → contenido correcto (HTML 11.417 B, `sw.js` v3) → cerrar | ✅ Verificado |
+| Verificar puerto 4000 libre tras cerrar | ✅ **Libre, ya no responde** |
+
+**Nota:** las pruebas de la Etapa 2 se hicieron en el puerto 4001 **solo**
+mientras el huérfano bloqueaba el 4000. Con él eliminado, se usará
+exclusivamente el 4000. La regla quedó escrita en `AGENTS.md`.
+
+**Pendiente #9 → resuelto.**
+
+---
+
 *Proyecto original: Reivaj640 / Mis-Gastos-VSCode · Licencia MIT · Atribución conservada*
