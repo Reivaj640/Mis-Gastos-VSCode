@@ -15,6 +15,7 @@ Archivo de contexto para cualquier agente que trabaje en este proyecto.
 | Ver la app en ESTE equipo | `npm run dev` → http://localhost:3000 |
 | Ver la app en OTROS equipos de tu red | `npm run build` → `npm run preview:network` → muestra la dirección sola |
 | Revisar errores | `npm run lint` → **0 errores y 0 avisos** (deuda #10 saldada). `npm run build` → compilación + tipos en verde |
+| Crear el .exe de escritorio | `npm run build:exe` → instalador NSIS + portable en `dist-electron/` (probado 2026-10-03) |
 | Ver lo que está mal sin conmovernos | `npm run build` |
 | Volver al código original de Javier | `git log --oneline` y `git checkout f68a431 -- .` |
 
@@ -112,6 +113,33 @@ claves sin pedir aprobación. Hacerlo rompe los datos del usuario.
 
 ---
 
+## 📐 Diseño responsivo (reglas UI/UX — pendiente #11, Etapa A aprobada)
+
+**Objetivo:** que la app se vea y se use bien en celular, tablet y
+escritorio sin romper las reglas visuales. Toda vista nueva o modificada
+debe cumplir esta tabla:
+
+| Regla | Cómo se cumple |
+|---|---|
+| **Primero el celular** | Diseñar para 360 px y subir con las escalas de Tailwind: `sm:` 640 · `md:` 768 · `lg:` 1024 · `xl:` 1280 |
+| **Zonas de toque** | Botones e íconos táctiles ≥ 44 × 44 px (p. ej. `min-h-11 min-w-11` o `p-3` en botones pequeños) |
+| **Sin zoom automático (iOS)** | Campos de texto con fuente ≥ 16 px (`text-base`); `text-sm` solo a partir de `sm:` |
+| **Navegación** | Celular: barra inferior (`lg:hidden fixed bottom-0` + `safe-area-bottom`). Escritorio: barra lateral (`hidden lg:flex`). El contenido principal reserva `pb-24 lg:pb-8` |
+| **Bordes y gestos** | Conservar `safe-area-*` (notch, barra de gestos) — no quitarlos al reutilizar estilos |
+| **Cuadrículas** | Empezar en `grid-cols-1` y subir con `sm:`/`md:`/`lg:` — nunca fijar varias columnas sin adaptación |
+| **Diálogos** | Con tope de ancho (`sm:max-w-md`, `w-full max-w-[calc(100%-2rem)]`) — jamás salirse de la pantalla |
+| **Tablas/listas anchas** | `overflow-x-auto` o reordenar a tarjetas en móvil |
+| **Colores** | Solo variables CSS OKLCH (misma regla de siempre) |
+| **Orientación** | Funcionar en vertical y horizontal; no asumir alturas fijas (salvo barras laterales con `h-screen`) |
+
+**Validación:** revisar cada vista a **360 / 768 / 1024 px** (ventana
+redimensionada, o desde el celular/tablet por la red con
+`npm run preview:network`). Las etapas **B** (auditoría por vista) y
+**C** (validación visual con el usuario) quedan **pendientes de
+aprobación**.
+
+---
+
 ## ⚡ Estado de las piezas
 
 | Pieza | Estado | Notas |
@@ -125,6 +153,7 @@ claves sin pedir aprobación. Hacerlo rompe los datos del usuario.
 | Control de versiones (Git) | ✅ Activo | Rama `main` |
 | Service worker (`sw.js` v3) | ✅ Corregido | Primero la red (siempre versión fresca) con copia de respaldo sin conexión; ver `CAMBIOS.md` |
 | Zustand (`useAppStore.ts`) | ✅ En uso | Puente en `page.tsx`: historial deshacer/rehacer (1 acción = 1 paso); guarda en las mismas 4 claves encriptadas |
+| Ejecutable Windows (`npm run build:exe`) | ✅ Construido y probado | `Mis-Gastos-Setup.exe` (NSIS) + `Mis-Gastos.exe` (portable) en `dist-electron/`; puerto interno aleatorio `127.0.0.1` (no toca 3000/4000); cerrar la app = X de la ventana (eso sí persiste los datos); reparación de caché `winCodeSign` explicada en `CAMBIOS.md` (2026-10-03) |
 
 > 📌 El **estado vivo** de cada sesión está en `AGENT.MD` — léelo antes de empezar.
 
@@ -144,6 +173,14 @@ los datos, primero guarda un backup con Configuración > Exportar.
 **¿Por qué el código de escritorio no funciona en `localhost`?**
 Porque `electron/main.js` sirve la carpeta `out/`, no el modo desarrollo.
 En desarrollo abre el browser con `npm run dev`.
+
+**¿`npm run build:exe` falla con "Cannot create symbolic link"?**
+Es la caché `winCodeSign` de electron-builder: el `.7z` trae 2 enlaces
+de macOS y Windows exige privilegio para crearlos. Solución **sin tocar
+Windows**: renombrar la extracción parcial a
+`%LOCALAPPDATA%\electron-builder\Cache\winCodeSign\winCodeSign-2.6.0`
+y borrar los temporales (la caché solo valida que esa carpeta exista).
+Paso a paso en `CAMBIOS.md` (2026-10-03).
 
 **¿Por qué `npm run dev:windows` no existe?**
 No era necesario. El comando único `npm run dev` es el que vale en todos

@@ -575,7 +575,103 @@ Settings,UpdateManager,AdvancedSearch}.tsx`,
 `src/components/ui/{carousel,sidebar}.tsx`, `electron/main.js`,
 `scripts/serve-network.cjs` + los 3 documentos de trabajo.
 
-**Commit:** pendiente de mostrar al usuario (serie `+16`).
+**Commit:** `+16` (`5075378`).
+
+---
+
+## 2026-10-03 — Mantenimiento: `Prompt-Mis-Gastos.txt` actualizado (Zustand)
+
+**Autorización del usuario:** *"actualizalo"*.
+
+- La **Parte II** (tabla de tecnologías + nota) y el apartado **"Toda
+  lectura/escritura pasa por..."** decían que `useAppStore` "existe pero
+  **no está en uso activo**" — **falso desde el commit `+15`**.
+- Se corrigieron los 2 lugares: ahora describen el flujo real — las
+  vistas leen/escriben por el store (historial deshacer/rehacer) y
+  `page.tsx` es el único puente hacia `useLocalStorage`, con escritura
+  por contenido en las mismas 4 claves encriptadas.
+- **Cero cambios de comportamiento:** es solo documentación.
+
+**Commit:** incluido en el `+17`.
+
+---
+
+## 2026-10-03 — #11 Etapa A (reglas responsive) + #12 (ejecutable Windows construido y probado)
+
+**Autorización del usuario:** *"#11 → Aprobar Etapa A (solo reglas)"*,
+*"#12 → Sí, aprobar"* y *"avancemos hasta completar lo de electron y
+luego comiteas"*.
+
+### #11 — Etapa A: reglas UI/UX responsivas (`AGENTS.md`)
+
+- Nueva sección **"📐 Diseño responsivo (reglas UI/UX)"** con 10 reglas:
+  primero 360 px (escalas Tailwind `sm/md/lg/xl`), zonas de toque ≥ 44 px,
+  fuentes de entrada ≥ 16 px (evita el zoom automático de iOS),
+  navegación barra inferior/lateral con `safe-area`, cuadrículas de 1
+  columna hacia arriba, topes de ancho en diálogos, `overflow-x-auto` en
+  tablas, colores solo de variables OKLCH, orientación vertical y
+  horizontal — más el protocolo de validación a **360/768/1024 px**
+  (ventana redimensionada o celular por la red con `preview:network`).
+- **Etapa B** (auditoría por vistas) y **Etapa C** (validación visual con
+  el usuario) quedan **pendientes de aprobación** (pendiente #11 abierto).
+
+### #12 — Ejecutable Windows
+
+**Primer `npm run build:exe` → FALLÓ (4 intentos):**
+`⨯ cannot execute … Cannot create symbolic link: El cliente no dispone
+de un privilegio requerido` — el paquete `winCodeSign-2.6.0` contiene 2
+enlaces simbólicos de macOS (`darwin/10.12/lib/libcrypto.dylib` y
+`libssl.dylib`); Windows exige privilegio para crear enlaces y 7-Zip
+(`-snld`) abortaba… **pese a que todo lo útil para Windows ya estaba
+extraído** (`rcedit*.exe`, `windows-10/…/signtool.exe`).
+
+**Diagnóstico (solo lectura):** leída la fuente de `app-builder`
+(`pkg/download/artifactDownloader.go`): la caché solo valida que exista
+la carpeta final `…\electron-builder\Cache\winCodeSign\winCodeSign-2.6.0`
+(`CheckCache` → existe y es directorio → se salta descarga y extracción),
+y la carpeta temporal del intento fallido estaba completa salvo los 2
+enlaces de macOS (irrelevantes al compilar para Windows).
+
+**Arreglo (fuera del proyecto, sin tocar Windows):** renombrar la
+extracción parcial `335577279` → `winCodeSign-2.6.0` y borrar los restos
+de los 4 intentos (carpetas temporales + `.7z`). Cero cambios de sistema
+y cero cambios de código.
+
+**Segundo build → EXIT 0:**
+
+| Artefacto | Tamaño | Qué es |
+|---|---|---|
+| `dist-electron/Mis-Gastos-Setup.exe` | 233,3 MB | Instalador NSIS (oneClick no, permite elegir carpeta, accesos directos) |
+| `dist-electron/Mis-Gastos.exe` | 233,1 MB | Portable (doble clic, sin instalación) |
+| `Mis-Gastos-Setup.exe.blockmap` + `latest.yml` | — | Soporte de auto-update (electron-updater) |
+| `win-unpacked/Mis Gastos.exe` | — | App sin empaquetar (misma prueba) |
+
+**Pruebas del portable (2 lanzamientos):**
+
+| Prueba | Resultado |
+|---|---|
+| Ventana | ✅ Título "Mis Gastos - Control de Gastos Mensuales" (× 2) |
+| Puerto interno | ✅ `127.0.0.1` aleatorio (54929 → 57159); **3000/4000 jamás usados** (regla de puertos respetada) |
+| HTTP interno | ✅ 200 × 2 con el HTML de la app |
+| Cierre limpio (X de la ventana) | ✅ 0 procesos huérfanos y puerto liberado (× 2) |
+| Perfil de datos | ✅ `%APPDATA%\mis-gastos` creado; `Local Storage/leveldb` pasó de **0 → 11.155 bytes** al cerrar con X |
+| Auto-update | ✅ `.updaterId` generado; `latest.yml` + `blockmap` presentes |
+
+**Hallazgo documentable:** `Stop-Process -Force` (cierre brusco) pierde
+las escrituras pendientes (log = 0 bytes); el cierre con la **X de la
+ventana sí persiste todo**. En la app de escritorio, cerrar la ventana
+ES el cierre correcto — la regla de "no cerrar con X" aplica a los
+servidores de `dev`/`preview` en la terminal, no a esta app.
+
+**Pendiente visual (opcional, del lado del usuario):** abrir
+`Mis-Gastos.exe`, crear un gasto, cerrar con X y reabrir para confirmar
+el dato a la vista.
+
+**Archivos tocados:** `AGENTS.md` (inicio rápido, piezas, FAQ),
+`CAMBIOS.md`, `AGENT.MD`, `Prompt-Mis-Gastos.txt` (2 zonas, entrada
+anterior de esta fecha). **Sin cambios en `src/`.**
+
+**Commit:** `+17`.
 
 ---
 

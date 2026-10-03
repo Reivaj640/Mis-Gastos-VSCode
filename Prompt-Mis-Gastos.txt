@@ -208,10 +208,13 @@ Toda solución debe:
 | Escritorio | Electron 41 + electron-builder (NSIS + Portable) |
 | Actualización | electron-updater (auto-update desde GitHub Releases) |
 
-> **Nota:** `src/store/useAppStore.ts` (Zustand) existe pero **no está en uso
-> activo**. Las vistas leen y escriben mediante `useLocalStorage` desde
-> `src/app/page.tsx`. No introduzcas Zustand como si ya gobernara el estado
-> sin verificar antes.
+> **Nota (actualizada desde el commit `+15`):** `src/store/useAppStore.ts`
+> (Zustand) está **activo como puente** en `src/app/page.tsx`: las vistas
+> leen del store y sus escrituras pasan por las acciones del store (que
+> registran el historial de deshacer/rehacer), y `page.tsx` guarda en las
+> mismas 4 claves encriptadas vía `useLocalStorage`. Este último sigue
+> siendo el **único** camino de lectura/escritura del navegador — no
+> añadas otra vía.
 
 
 
@@ -800,10 +803,12 @@ interface AppSettings {
 
 
 
-**Toda lectura/escritura pasa por** `useLocalStorage<T>(key, defaultValue)`,
-o por `useAppStore` si se requiere historial de deshacer/rehacer.
-(Nota: hoy `useAppStore` existe pero no está en uso activo; las vistas
-usan `useLocalStorage` directamente en `page.tsx`.)
+**Toda lectura/escritura pasa por** `useLocalStorage<T>(key, defaultValue)`
+llamado **solo desde `page.tsx`**. Las vistas no tocan `useLocalStorage`
+directamente: leen del store `useAppStore` (Zustand, activo desde `+15`)
+y escriben mediante sus acciones (historial de deshacer/rehacer);
+`page.tsx` es el único puente store ⇄ `useLocalStorage`, y la escritura
+compara por contenido para no reescribir claves sin cambios.
 
 
 

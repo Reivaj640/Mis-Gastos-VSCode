@@ -15,43 +15,51 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 
 | | |
 |---|---|
-| **Fecha** | 2026-10-02 |
-| **Sesión** | Pendiente #10 ejecutado: deuda de lint saldada (83 → 0) |
+| **Fecha** | 2026-10-03 |
+| **Sesión** | Prompt de Zustand corregido + #11 Etapa A (reglas responsive) + #12 ejecutable Windows construido y probado |
 | **Estado** | ✅ Estable — todo guardado en Git |
 
 ### Qué se hizo en esta sesión
-1. **#10 resuelto (autorizado):** `npm run lint` pasó de **83 problemas
-   (32 err / 51 avis) a 0** — sin ignorar nada en `src/`.
-2. **`electron/` + `scripts/`:** la regla `no-require-imports` quedó
-   apagada **solo ahí** (justificado en `eslint.config.mjs`): en
-   CommonJS, `require()` ES la forma correcta — 14 "errores" eran falsos
-   positivos.
-3. **`src/` — arreglos reales:** ~50 imports/variables sin uso quitados;
-   13 `any` sustituidos por tipos reales; 4 `setState` en efecto
-   reescritos con los patrones que React recomienda
-   (`useSyncExternalStore` en `use-mobile` e `isElectron` con
-   inicialización diferida); el ancho aleatorio del esqueleto del menú
-   pasó a fijo (`Math.random` en render = desajuste de hidratación).
-4. **Excepción documentada (1 sola):** `page.tsx` conserva un
-   `eslint-disable` con justificación para el `setInitError` de la
-   inicialización única de arranque (moverlo alteraría el orden de
-   arranque).
-5. **Pruebas:** lint 0 · tsc 0 · build 0 · navegador (Resumen,
-   Historial, Registrar Pago, Configuración, Gastos + export CSV) ✅ ·
-   recargas con las 3 claves **byte idénticas** (cero escrituras) · sin
-   `mis-gastos-storage` · **puerto 4000 LIBRE**.
-6. Commit `+16`.
+1. **`Prompt-Mis-Gastos.txt` corregido (autorizado):** los 2 lugares que
+   decían que `useAppStore` "no está en uso activo" ahora describen el
+   flujo real (desde el `+15`: vistas → store → `page.tsx` →
+   `useLocalStorage`). Solo documentos.
+2. **#11 Etapa A (solo reglas, autorizada):** nueva sección "📐 Diseño
+   responsivo" en `AGENTS.md` con 10 reglas UI/UX táctiles + validación
+   a 360/768/1024 px. Etapas B (auditoría por vistas) y C (validación
+   visual) esperan aprobación → pendiente #11 queda **abierto**.
+3. **#12 ejecutable Windows (autorizado):** el primer `build:exe` falló
+   4 veces por la caché `winCodeSign` (2 enlaces de macOS piden
+   privilegio de enlaces); se reparó la caché **renombrando la
+   extracción parcial** al nombre final que valida `app-builder` (sin
+   tocar Windows ni el código) → segundo build **EXIT 0**: instalador
+   NSIS 233 MB + portable 233 MB + `blockmap`/`latest.yml`.
+4. **Pruebas del portable:** ventana con título correcto × 2 · puerto
+   interno aleatorio `127.0.0.1` (54929 → 57159, **nunca 3000/4000**) ·
+   HTTP 200 × 2 · cierre con X = **0 procesos huérfanos y puerto
+   liberado** × 2 · perfil `%APPDATA%\mis-gastos` con **11.155 bytes**
+   persistidos en `Local Storage` · `.updaterId` (auto-update) creado.
+5. **Hallazgo:** el cierre brusco (`Stop-Process`) pierde escrituras
+   pendientes (log = 0 bytes); la **X de la ventana sí persiste todo**.
+   En escritorio, cerrar con X ES el cierre correcto — la regla de "no
+   cerrar con X" aplica a los servidores en terminal (dev/preview).
+6. Commit `+17`.
 
 ### Sesiones anteriores
-1. **#6** (`1367d49`, `+15`): Zustand activo con deshacer/rehacer 1 a 1,
+1. **#10** (`5075378`, `+16`): deuda de lint saldada — `npm run lint`
+   83 → 0 sin ignorar nada en `src/`; `electron/`+`scripts/` con la
+   regla `no-require-imports` apagada (CommonJS, justificada en
+   `eslint.config.mjs`); tsc/build en 0; 5 vistas + export CSV probadas
+   sin cambios de comportamiento.
+2. **#6** (`1367d49`, `+15`): Zustand activo con deshacer/rehacer 1 a 1,
    persistencia en texto plano eliminada, integridad verificada byte a
    byte.
-2. **#7 y #8** (`c54847f`, `+14`) + hito `+13` (`ec6880d`): build con
+3. **#7 y #8** (`c54847f`, `+14`) + hito `+13` (`ec6880d`): build con
    tipos verificados, ESLint 9 funcionando → deuda #10.
-3. Etapa 1 (`53e4b9c`), Etapa 2 service worker v3 (`9e04323`), regla de
+4. Etapa 1 (`53e4b9c`), Etapa 2 service worker v3 (`9e04323`), regla de
    puertos y validación manual en 4000 (`fd8e9ce`, `8b5407e`) → detalle en
    `CAMBIOS.md`.
-4. Solución de red guardada + creación de `AGENT.MD` → `99a561d`, `9ba8d8c`.
+5. Solución de red guardada + creación de `AGENT.MD` → `99a561d`, `9ba8d8c`.
 
 ---
 
@@ -67,7 +75,8 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | Revisión de errores (`npm run lint`) | ✅ Limpio | `eslint.config.mjs` (ESLint 9); **0 errores y 0 avisos** (deuda #10 saldada: 83 → 0) |
 | Service worker (`public/sw.js` v3) | ✅ Corregido y probado | Primero la red (versión fresca) + copia sin conexión. Commit `9e04323` |
 | Servidor Next huérfano (PID 23240) | ✅ Detenido | Puerto `::1:4000` liberado. **Regla nueva:** todo proceso = se lanza → ocupa el puerto → se cierra → desocupa. Sin puertos alternos |
-| Instalador Windows (`npm run build:exe`) | ⬜ No probado en esta sesión | Genera `.exe` en `dist-electron/` |
+| Instalador Windows (`npm run build:exe`) | ✅ Construido y probado | Instalador NSIS `Mis-Gastos-Setup.exe` (233 MB) + portable `Mis-Gastos.exe` (233 MB) + auto-update (`latest.yml`/`blockmap`); puerto interno aleatorio `127.0.0.1` (no toca 3000/4000); cierre con X = 0 huérfanos; datos en `%APPDATA%\mis-gastos` (11 KB persistidos). Requiere la caché `winCodeSign` reparada — ver `CAMBIOS.md` 2026-10-03 |
+| Reglas responsive UI/UX (`AGENTS.md`) | ✅ Etapa A documentada (#11) | 10 reglas táctiles + validación a 360/768/1024 px; auditoría (Etapa B) y validación visual (Etapa C) pendientes de aprobación |
 | Control de versiones (Git) | ✅ Activo | Rama `main`, **sin cambios sin guardar** |
 | Deshacer/Rehacer (Zustand `useAppStore`) | ✅ Activo | Puente en `page.tsx`; 1 acción = 1 paso; botones flotantes + `Ctrl+Z`/`Ctrl+Y`; el historial se limpia al recargar |
 | Datos del usuario | ✅ Intactos | Encriptados (AES-GCM); verificado **byte a byte**: cargar la versión nueva no escribe nada en las claves |
@@ -89,6 +98,7 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | 2026-10-02 | Commit de hito `+13` + **#7 y #8 resueltos**: build con tipos verificados, ESLint 9 funcionando, 15 errores ocultos reparados | `ec6880d` (`+13`) + `+14` |
 | 2026-10-02 | **#6 resuelto**: Zustand activo con deshacer/rehacer 1 a 1, persistencia en texto plano eliminada, integridad de datos verificada byte a byte | `+15` |
 | 2026-10-02 | **#10 resuelto**: deuda de lint saldada — `lint` 83 → 0, `tsc` y `build` en verde, 5 vistas + export CSV probadas sin cambios de comportamiento | `+16` |
+| 2026-10-03 | `Prompt-Mis-Gastos.txt` corregido (Zustand en uso desde `+15`) + reglas responsive (Etapa A #11) + ejecutable Windows construido y probado (#12; caché `winCodeSign` reparada) | `+17` |
 
 **Punto de retorno al estado original de Javier:** `git checkout f68a431 -- .`
 
@@ -96,25 +106,32 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 
 ## ⚠️ Pendientes detectados (NO corregidos — requieren decisión)
 
-**Prioridad según la última evaluación (2026-10-02):**
+**Prioridad según la última evaluación (2026-10-03):**
 
 | # | Qué | Riesgo | Por qué quedó |
 |---|---|---|---|
 | 9 | ~~Servidor Next huérfano (PID 23240, `::1:4000`)~~ | — | ✅ **Resuelto:** detenido con aprobación del usuario; puerto 4000 verificado libre |
+| 11 | Responsive: **Etapa B** (auditoría por vistas a 360/768/1024 px) + **Etapa C** (validación visual con el usuario) | Bajo — la base responsiva ya existe (breakpoints + bottom-nav + `safe-area`) | Etapa A ejecutada (+17): 10 reglas escritas en `AGENTS.md`; B y C esperan aprobación |
 
-### Resueltos en esta sesión (2026-10-02, commit `+16`)
+### Resueltos en esta sesión (2026-10-03, commit `+17`)
+
+| # | Pendiente | Cómo quedó |
+|---|---|---|
+| 12 | Ejecutable Windows nunca probado (`build:exe` ⬜) | ✅ **Construido y probado:** reparada la caché `winCodeSign` (2 enlaces de macOS sin privilegio — renombrado de la extracción parcial, sin tocar Windows ni el código) → build 0 con instalador NSIS 233 MB + portable 233 MB + auto-update. Pruebas: ventana ✅ × 2 · puerto interno aleatorio `127.0.0.1` (nunca 3000/4000) ✅ · HTTP 200 × 2 ✅ · cierre con X = 0 huérfanos ✅ × 2 · **11.155 bytes persistidos** en `%APPDATA%\mis-gastos` ✅. Falta solo la prueba visual de datos del usuario (opcional) |
+
+### Resueltos en la sesión anterior (2026-10-02, commit `+16`)
 
 | # | Pendiente | Cómo quedó |
 |---|---|---|
 | 10 | **Deuda de lint:** 83 problemas (32 errores / 51 avisos) | ✅ **`npm run lint` = 0.** `electron/`+`scripts/`: regla `require` apagada solo ahí (CommonJS, justificada en la config). `src/`: ~50 imports/vars muertos quitados, 13 `any` con tipos reales, 4 `setState` en efecto con patrón canónico (`useSyncExternalStore` / inicialización diferida), ancho aleatorio en render → fijo; 1 `eslint-disable` documentado en `page.tsx`. Verificado: lint/tsc/build en 0, 5 vistas + CSV en navegador, datos byte idénticos |
 
-### Resueltos en la sesión anterior (2026-10-02, commit `+15`)
+### Resueltos hace dos sesiones (2026-10-02, commit `+15`)
 
 | # | Pendiente | Cómo quedó |
 |---|---|---|
 | 6 | Zustand (`src/store/useAppStore.ts`) no estaba en uso | ✅ **Activo como puente** en `page.tsx`: vistas intactas; toda escritura pasa por el store (historial) y se guarda en las mismas 4 claves encriptadas. Corregidos 2 bugs latentes (el primer Ctrl+Z borraba todo / desfase de un paso), quitada la persistencia en texto plano `mis-gastos-storage`, botones + `Ctrl+Z`/`Ctrl+Y` |
 
-### Resueltos hace dos sesiones (2026-10-02, commit `+14`)
+### Resueltos hace tres sesiones (2026-10-02, commit `+14`)
 
 | # | Pendiente | Cómo quedó |
 |---|---|---|
