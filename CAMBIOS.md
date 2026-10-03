@@ -47,23 +47,51 @@ Este archivo lo mantiene el agente (yo) en cada modificación.
 | Control de versiones (Git) | Activo, rama `main` |
 | Punto de retorno | `f68a431` (estado original) |
 | Código de la app | Sin modificar |
-| Node.js en el computador | **NO instalado** |
-| Dependencias (`node_modules`) | No instaladas |
-| Carpeta `out/` (versión compilada) | Presente, traída del repositorio |
+| Node.js en el computador | Instalado por el usuario — v26.10.0 |
+| Dependencias (`node_modules`) | Instaladas — 1100 paquetes |
+| Compilación de producción | **Correcta** — sin errores |
+| Prueba de arranque | **Correcta** — la app responde bien |
+| Carpeta `out/` (versión compilada) | Regenerada y verificada |
 
-### Problema detectado que requiere decisión
+### 2) Se instaló el entorno y se verificó que la app funciona
 
-**Node.js no está instalado en este computador.**
+**Node.js** (lo instaló el usuario): v26.10.0.
+**Dependencias del proyecto**: 1100 paquetes instalados en 1 minuto.
 
-Sin Node.js la aplicación **no se puede abrir** en este equipo. No es
-problema del proyecto: es que falta el programa que la hace funcionar
-(lo mismo que un motor para un carro — el carro está, el motor no).
+**Verificaciones realizadas:**
 
-- Node.js es un programa gratuito y oficial de Node.js.
-- Se necesita tanto para instalar las piezas del proyecto como para
-  abrirlo y probarlo.
-- **No lo instalé** porque la regla acordada es pedir aprobación antes de
-  instalar herramientas.
+| Prueba | Resultado |
+|--------|-----------|
+| Compilar para producción (`npm run build`) | ✅ Correcto, 10.2 s, sin errores |
+| Abrir la aplicación en el navegador | ✅ Responde correctamente (HTTP 200, 18 KB) |
+| ¿Aparece el nombre y la pantalla de la app? | ✅ Sí |
+
+**La aplicación abre y funciona correctamente.** No se modificó nada del
+código para lograr esto.
+
+### Problema detectado que requiere decisión (NO corregido todavía)
+
+**El comando `npm run dev` no funciona en Windows.**
+
+- El proyecto trae este comando: `next dev -p 3000 2>&1 | tee dev.log`
+- `tee` es una instrucción de Linux, **no existe en Windows**.
+- Resultado: el comando se cierra de inmediato con un error y la app
+  nunca abre.
+- **Orden temporal que sí funciona en Windows:**
+  `npx next dev -p 3000`
+- **Corrección propuesta (una línea, pendiente de tu aprobación):**
+  cambiar el comando en `package.json` para que funcione en ambos
+  sistemas, o dejar `npm run dev` solo para Linux y agregar un
+  `npm run dev:windows` para Windows.
+- **No lo cambié** porque modifica la estructura del proyecto y la regla
+  acordada es pedir aprobación antes.
+
+### Aviso menor
+
+Al compilar, Next.js avisa que falta definir `metadataBase` en los datos
+de la página. No afecta el funcionamiento: solo afecta cómo se ven los
+enlaces al compartir la app en redes sociales. Queda anotado para
+cuando se decida trabalhar en eso.
 
 ### Estado de Git (para volver atrás)
 
