@@ -212,7 +212,7 @@ export default function UpdateManager() {
             </Badge>
             <button
               onClick={() => setShowDetails(!showDetails)}
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="inline-flex items-center justify-center min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 text-muted-foreground hover:text-foreground transition-colors"
             >
               {showDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </button>

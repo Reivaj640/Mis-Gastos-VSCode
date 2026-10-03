@@ -369,7 +369,7 @@ export default function Settings({
                     {cat}
                     <button
                       onClick={() => handleRemoveCategory(cat)}
-                      className="hover:text-red-500 transition-colors"
+                      className="hover:text-red-500 transition-colors p-1.5"
                     >
                       <X className="h-3 w-3" />
                     </button>

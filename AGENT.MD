@@ -16,50 +16,60 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | | |
 |---|---|
 | **Fecha** | 2026-10-03 |
-| **Sesión** | Prompt de Zustand corregido + #11 Etapa A (reglas responsive) + #12 ejecutable Windows construido y probado |
+| **Sesión** | #11 cerrado: auditoría responsive a 360/768/1024 px + correcciones (Etapas B y C) |
 | **Estado** | ✅ Estable — todo guardado en Git |
 
 ### Qué se hizo en esta sesión
-1. **`Prompt-Mis-Gastos.txt` corregido (autorizado):** los 2 lugares que
-   decían que `useAppStore` "no está en uso activo" ahora describen el
-   flujo real (desde el `+15`: vistas → store → `page.tsx` →
-   `useLocalStorage`). Solo documentos.
-2. **#11 Etapa A (solo reglas, autorizada):** nueva sección "📐 Diseño
-   responsivo" en `AGENTS.md` con 10 reglas UI/UX táctiles + validación
-   a 360/768/1024 px. Etapas B (auditoría por vistas) y C (validación
-   visual) esperan aprobación → pendiente #11 queda **abierto**.
-3. **#12 ejecutable Windows (autorizado):** el primer `build:exe` falló
-   4 veces por la caché `winCodeSign` (2 enlaces de macOS piden
-   privilegio de enlaces); se reparó la caché **renombrando la
-   extracción parcial** al nombre final que valida `app-builder` (sin
-   tocar Windows ni el código) → segundo build **EXIT 0**: instalador
-   NSIS 233 MB + portable 233 MB + `blockmap`/`latest.yml`.
-4. **Pruebas del portable:** ventana con título correcto × 2 · puerto
-   interno aleatorio `127.0.0.1` (54929 → 57159, **nunca 3000/4000**) ·
-   HTTP 200 × 2 · cierre con X = **0 procesos huérfanos y puerto
-   liberado** × 2 · perfil `%APPDATA%\mis-gastos` con **11.155 bytes**
-   persistidos en `Local Storage` · `.updaterId` (auto-update) creado.
-5. **Hallazgo:** el cierre brusco (`Stop-Process`) pierde escrituras
-   pendientes (log = 0 bytes); la **X de la ventana sí persiste todo**.
-   En escritorio, cerrar con X ES el cierre correcto — la regla de "no
-   cerrar con X" aplica a los servidores en terminal (dev/preview).
-6. Commit `+17`.
+1. **#11 Etapa B (auditoría + correcciones, autorizada):** 6 vistas ×
+   3 anchos (360/768/1024 px) medidas con un iframe del mismo origen =
+   18 mediciones. **3 hallazgos corregidos en 10 archivos de `src/`:**
+   ① 768 px — `md:p-6` pisaba al `pb-24` y dejaba solo 24 px de fondo
+   con la barra inferior encima (último contenido tapado) → reserva
+   `pb-24 md:pb-24 lg:pb-8 xl:pb-10`; ② anti-zoom iOS — los inputs
+   bajaban a 14 px desde 768 px → `lg:text-sm`; ③ zonas de toque de
+   28–36 px → **44 px solo por debajo de 1024 px** (alcance elegido por
+   el usuario; escritorio compacto intacto) en los primitivos `ui/`
+   (button, input, select, tabs, dropdown-menu) + 4 botones sueltos
+   (Dashboard, UpdateManager, IncomeManager, Settings). Excepción: la X
+   dentro del chip de categoría = 24 px.
+2. **Re-auditoría tras `build`:** 360 y 768 → **0** táctiles < 44, **0**
+   inputs < 16, reserva 96 px, sin desbordes (6/6 vistas); 1024 →
+   barra lateral, reserva 32 px y tamaños compactos (comportamiento
+   deseado). `lint` 0/0 y `build` OK.
+3. **#11 Etapa C (validación visual):** 9 capturas presentadas al
+   usuario (6 vistas a 360 px, 2 a 768 px, 1 a 1024 px con barra
+   lateral).
+4. **Datos verificados tras navegar:** longitudes byte idénticas al
+   baseline (4725/73/537), desencriptación con hash de integridad
+   correcto, contenido = demo canónico (10 gastos / 1 pago / ingresos
+   vacíos) y cifras del dashboard iguales. Los IV del registro anterior
+   habían rotado (IV aleatorio por diseño) **sin cambio de contenido**;
+   la app no escribe al cargar ni al navegar (comprobado con recarga).
+5. Commit `+18` — con esto **el tablero queda sin pendientes
+   abiertos** (los 12 originales + #9 están resueltos).
 
 ### Sesiones anteriores
-1. **#10** (`5075378`, `+16`): deuda de lint saldada — `npm run lint`
+1. **+17** (`a99dfb8`): `Prompt-Mis-Gastos.txt` corregido (Zustand en
+   uso desde `+15`), #11 Etapa A (las 10 reglas responsive en
+   `AGENTS.md`) y #12 ejecutable Windows construido y probado (caché
+   `winCodeSign` reparada renombrando la extracción parcial; instalador
+   NSIS + portable de 233 MB; puerto interno aleatorio `127.0.0.1`;
+   cierre con X = 0 huérfanos; hallazgo: `Stop-Process` pierde
+   escrituras — en escritorio, cerrar con X ES el cierre correcto).
+2. **#10** (`5075378`, `+16`): deuda de lint saldada — `npm run lint`
    83 → 0 sin ignorar nada en `src/`; `electron/`+`scripts/` con la
    regla `no-require-imports` apagada (CommonJS, justificada en
    `eslint.config.mjs`); tsc/build en 0; 5 vistas + export CSV probadas
    sin cambios de comportamiento.
-2. **#6** (`1367d49`, `+15`): Zustand activo con deshacer/rehacer 1 a 1,
+3. **#6** (`1367d49`, `+15`): Zustand activo con deshacer/rehacer 1 a 1,
    persistencia en texto plano eliminada, integridad verificada byte a
    byte.
-3. **#7 y #8** (`c54847f`, `+14`) + hito `+13` (`ec6880d`): build con
+4. **#7 y #8** (`c54847f`, `+14`) + hito `+13` (`ec6880d`): build con
    tipos verificados, ESLint 9 funcionando → deuda #10.
-4. Etapa 1 (`53e4b9c`), Etapa 2 service worker v3 (`9e04323`), regla de
+5. Etapa 1 (`53e4b9c`), Etapa 2 service worker v3 (`9e04323`), regla de
    puertos y validación manual en 4000 (`fd8e9ce`, `8b5407e`) → detalle en
    `CAMBIOS.md`.
-5. Solución de red guardada + creación de `AGENT.MD` → `99a561d`, `9ba8d8c`.
+6. Solución de red guardada + creación de `AGENT.MD` → `99a561d`, `9ba8d8c`.
 
 ---
 
@@ -76,7 +86,7 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | Service worker (`public/sw.js` v3) | ✅ Corregido y probado | Primero la red (versión fresca) + copia sin conexión. Commit `9e04323` |
 | Servidor Next huérfano (PID 23240) | ✅ Detenido | Puerto `::1:4000` liberado. **Regla nueva:** todo proceso = se lanza → ocupa el puerto → se cierra → desocupa. Sin puertos alternos |
 | Instalador Windows (`npm run build:exe`) | ✅ Construido y probado | Instalador NSIS `Mis-Gastos-Setup.exe` (233 MB) + portable `Mis-Gastos.exe` (233 MB) + auto-update (`latest.yml`/`blockmap`); puerto interno aleatorio `127.0.0.1` (no toca 3000/4000); cierre con X = 0 huérfanos; datos en `%APPDATA%\mis-gastos` (11 KB persistidos). Requiere la caché `winCodeSign` reparada — ver `CAMBIOS.md` 2026-10-03 |
-| Reglas responsive UI/UX (`AGENTS.md`) | ✅ Etapa A documentada (#11) | 10 reglas táctiles + validación a 360/768/1024 px; auditoría (Etapa B) y validación visual (Etapa C) pendientes de aprobación |
+| Auditoría responsive UI/UX (`AGENTS.md`) | ✅ **#11 cerrado** (A + B + C) | 10 reglas + auditoría real a 360/768/1024 px (18 mediciones, 6 vistas) + correcciones en 10 archivos + validación visual con capturas. Resultado: 0 táctiles < 44 y 0 inputs < 16 en móvil/tablet, sin desbordes, fondo de tablet corregido |
 | Control de versiones (Git) | ✅ Activo | Rama `main`, **sin cambios sin guardar** |
 | Deshacer/Rehacer (Zustand `useAppStore`) | ✅ Activo | Puente en `page.tsx`; 1 acción = 1 paso; botones flotantes + `Ctrl+Z`/`Ctrl+Y`; el historial se limpia al recargar |
 | Datos del usuario | ✅ Intactos | Encriptados (AES-GCM); verificado **byte a byte**: cargar la versión nueva no escribe nada en las claves |
@@ -99,6 +109,7 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | 2026-10-02 | **#6 resuelto**: Zustand activo con deshacer/rehacer 1 a 1, persistencia en texto plano eliminada, integridad de datos verificada byte a byte | `+15` |
 | 2026-10-02 | **#10 resuelto**: deuda de lint saldada — `lint` 83 → 0, `tsc` y `build` en verde, 5 vistas + export CSV probadas sin cambios de comportamiento | `+16` |
 | 2026-10-03 | `Prompt-Mis-Gastos.txt` corregido (Zustand en uso desde `+15`) + reglas responsive (Etapa A #11) + ejecutable Windows construido y probado (#12; caché `winCodeSign` reparada) | `+17` |
+| 2026-10-03 | **#11 cerrado**: auditoría responsive 360/768/1024 px × 6 vistas (18 mediciones) + 3 correcciones en 10 archivos (fondo de tablet, anti-zoom iOS, zonas de toque 44 px en móvil/tablet) + re-auditoría en verde + 9 capturas de validación visual + datos verificados byte a byte | `+18` |
 
 **Punto de retorno al estado original de Javier:** `git checkout f68a431 -- .`
 
@@ -106,32 +117,35 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 
 ## ⚠️ Pendientes detectados (NO corregidos — requieren decisión)
 
-**Prioridad según la última evaluación (2026-10-03):**
+**Sin pendientes abiertos (2026-10-03).** Los 12 pendientes originales
+más el huérfano #9 están resueltos (detalle en los bloques de abajo).
+El último en cerrarse fue el **#11** (commit `+18`).
 
-| # | Qué | Riesgo | Por qué quedó |
-|---|---|---|---|
-| 9 | ~~Servidor Next huérfano (PID 23240, `::1:4000`)~~ | — | ✅ **Resuelto:** detenido con aprobación del usuario; puerto 4000 verificado libre |
-| 11 | Responsive: **Etapa B** (auditoría por vistas a 360/768/1024 px) + **Etapa C** (validación visual con el usuario) | Bajo — la base responsiva ya existe (breakpoints + bottom-nav + `safe-area`) | Etapa A ejecutada (+17): 10 reglas escritas en `AGENTS.md`; B y C esperan aprobación |
+### Resueltos en esta sesión (2026-10-03, commit `+18`)
 
-### Resueltos en esta sesión (2026-10-03, commit `+17`)
+| # | Pendiente | Cómo quedó |
+|---|---|---|
+| 11 | Responsive: **Etapa B** (auditoría por vistas a 360/768/1024 px + corrección) y **Etapa C** (validación visual con el usuario) | ✅ **Cerrado:** 18 mediciones (6 vistas × 3 anchos) con un iframe del mismo origen; 3 hallazgos corregidos en 10 archivos de `src/` — ① fondo de tablet 768–1023 px (el `md:p-6` pisaba al `pb-24`) → reserva `pb-24 md:pb-24 …`; ② anti-zoom iOS → inputs `lg:text-sm`; ③ zonas de toque 28–36 px → **44 px solo por debajo de 1024 px** (alcance elegido por el usuario; excepción: X de chip = 24 px). Re-auditoría en verde: 0 táctiles < 44, 0 inputs < 16, sin desbordes, reservas 96/96/32 px. 9 capturas presentadas (Etapa C). Datos byte idénticos (4725/73/537; IVs aleatorios sin cambio de contenido). Detalle en `CAMBIOS.md` |
+
+### Resueltos en la sesión anterior (2026-10-03, commit `+17`)
 
 | # | Pendiente | Cómo quedó |
 |---|---|---|
 | 12 | Ejecutable Windows nunca probado (`build:exe` ⬜) | ✅ **Construido y probado:** reparada la caché `winCodeSign` (2 enlaces de macOS sin privilegio — renombrado de la extracción parcial, sin tocar Windows ni el código) → build 0 con instalador NSIS 233 MB + portable 233 MB + auto-update. Pruebas: ventana ✅ × 2 · puerto interno aleatorio `127.0.0.1` (nunca 3000/4000) ✅ · HTTP 200 × 2 ✅ · cierre con X = 0 huérfanos ✅ × 2 · **11.155 bytes persistidos** en `%APPDATA%\mis-gastos` ✅. Falta solo la prueba visual de datos del usuario (opcional) |
 
-### Resueltos en la sesión anterior (2026-10-02, commit `+16`)
+### Resueltos hace dos sesiones (2026-10-02, commit `+16`)
 
 | # | Pendiente | Cómo quedó |
 |---|---|---|
 | 10 | **Deuda de lint:** 83 problemas (32 errores / 51 avisos) | ✅ **`npm run lint` = 0.** `electron/`+`scripts/`: regla `require` apagada solo ahí (CommonJS, justificada en la config). `src/`: ~50 imports/vars muertos quitados, 13 `any` con tipos reales, 4 `setState` en efecto con patrón canónico (`useSyncExternalStore` / inicialización diferida), ancho aleatorio en render → fijo; 1 `eslint-disable` documentado en `page.tsx`. Verificado: lint/tsc/build en 0, 5 vistas + CSV en navegador, datos byte idénticos |
 
-### Resueltos hace dos sesiones (2026-10-02, commit `+15`)
+### Resueltos hace tres sesiones (2026-10-02, commit `+15`)
 
 | # | Pendiente | Cómo quedó |
 |---|---|---|
 | 6 | Zustand (`src/store/useAppStore.ts`) no estaba en uso | ✅ **Activo como puente** en `page.tsx`: vistas intactas; toda escritura pasa por el store (historial) y se guarda en las mismas 4 claves encriptadas. Corregidos 2 bugs latentes (el primer Ctrl+Z borraba todo / desfase de un paso), quitada la persistencia en texto plano `mis-gastos-storage`, botones + `Ctrl+Z`/`Ctrl+Y` |
 
-### Resueltos hace tres sesiones (2026-10-02, commit `+14`)
+### Resueltos hace cuatro sesiones (2026-10-02, commit `+14`)
 
 | # | Pendiente | Cómo quedó |
 |---|---|---|

@@ -332,7 +332,7 @@ export default function IncomeManager({ incomes, setIncomes, payments, currencyS
                 {INCOME_COLORS.map((color) => {
                   const isSelected = formColor === color.value;
                   return (
-                    <button key={color.value} type="button" onClick={() => setFormColor(color.value)} className={`h-8 w-8 rounded-full ${color.bg} ${isSelected ? "ring-2 ring-offset-2 ring-blue-500 dark:ring-blue-400" : "hover:opacity-80"} transition-all`} title={color.label} />
+                    <button key={color.value} type="button" onClick={() => setFormColor(color.value)} className={`h-8 w-8 min-h-11 min-w-11 lg:min-h-0 lg:min-w-0 rounded-full ${color.bg} ${isSelected ? "ring-2 ring-offset-2 ring-blue-500 dark:ring-blue-400" : "hover:opacity-80"} transition-all`} title={color.label} />
                   );
                 })}
               </div>

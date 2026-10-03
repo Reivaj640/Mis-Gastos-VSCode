@@ -673,6 +673,106 @@ anterior de esta fecha). **Sin cambios en `src/`.**
 
 **Commit:** `+17`.
 
+## 2026-10-03 — Pendiente #11 cerrado: auditoría responsive, correcciones y validación visual (Etapas B y C)
+
+### Contexto
+
+La Etapa A (`+17`) dejó escritas las 10 reglas UI/UX en `AGENTS.md`.
+Con la aprobación del orquestador ("sigue con todo el pendiente 11")
+se ejecutaron la **Etapa B** (auditoría por vista + corrección de lo
+evidente) y la **Etapa C** (validación visual con el usuario). El
+alcance de las zonas de toque lo eligió el usuario en esa sesión:
+**44 px solo por debajo de 1024 px** (celular/tablet); el escritorio
+conserva su aspecto compacto actual.
+
+### Cómo se auditió (Etapa B)
+
+- **Método:** servidor `preview:network` en el puerto **4000** (ciclo
+  completo: se lanzó → se usó → se cerrará → verificará libre) y un
+  iframe del mismo origen redimensionado a **360 / 768 / 1024 px**, de
+  modo que las media queries y `matchMedia` responden al ancho del
+  iframe. **6 vistas × 3 anchos = 18 mediciones.**
+- **Métricas por vista:** desbordamiento horizontal, elementos fuera de
+  pantalla, botones/objetos táctiles < 44 px, inputs con fuente < 16 px,
+  reserva inferior del contenido (`padding-bottom`), texto recortado.
+- **Navegación entre vistas:** los clics sintéticos no cambiaban de
+  vista y los reales exigían la ventana visible; se usó la invocación
+  directa del manejador de navegación de React (solo eso — ninguna ruta
+  de escritura de datos quedó al alcance de la auditoría).
+
+### Hallazgos (3) y correcciones (10 archivos de `src/`)
+
+| # | Hallazgo | Dónde | Corrección |
+|---|---|---|---|
+| 1 | **Tablet 768–1023 px:** `md:p-6` pisaba al `pb-24` → el fondo del contenido quedaba en 24 px con la barra inferior (64 px) encima: **el último contenido quedaba tapado** | `page.tsx` | Reserva repetida por escala: `pb-24 md:pb-24 lg:pb-8 xl:pb-10` |
+| 2 | **Anti-zoom iOS con hueco:** los inputs bajaban a 14 px desde 768 px (`md:text-sm`) → en iPhone horizontal (844–932 px) iOS hacía zoom al enfocar | `ui/input.tsx` | `lg:text-sm` (16 px hasta 1024 px) + altura mínima 44 en móvil |
+| 3 | **Zonas de toque:** botones de 28–36 px frente a la regla ≥ 44 px. Conteos a 360 px: Gastos 24 · Configuración 10 · Historial 10 · Resumen 7 · Registrar Pago 5 · Ingresos 3 | primitivos `ui/` + 4 botones sueltos | Ver detalle abajo |
+
+**Correcciones del hallazgo 3** (todas con reversión `lg:` para que el
+escritorio no cambie):
+
+- `ui/button.tsx` — base con `min-h-11 min-w-11 lg:min-h-0 lg:min-w-0`:
+  cubre todos los botones de la app (CTA "Registrar Pagos", X del aviso,
+  iconos de fila, tamaños `h-7`/`h-8` incluidos — el mínimo gana sobre
+  la altura fija y en escritorio vuelve al tamaño original).
+- `ui/input.tsx` — altura mínima 44 en móvil.
+- `ui/select.tsx` — disparador y **ítems del menú** a 44 en móvil.
+- `ui/tabs.tsx` — lista `min-h-[50px] lg:min-h-0` y disparadores a 44
+  (los ítems interiores pasan de ~29 px a 44).
+- `ui/dropdown-menu.tsx` — ítems, casillas, radio y submenú a 44.
+- `Dashboard.tsx` — desplegable "X pagos realizados".
+- `UpdateManager.tsx` — chevron de detalles de actualización.
+- `IncomeManager.tsx` — puntos de color del formulario.
+- `Settings.tsx` — X de quitar categoría dentro del chip: 16 → 24 px.
+  **Excepción documentada:** dentro de un chip no caben 44 px sin romper
+  el chip; 24 px (altura del chip) es el máximo posible.
+
+### Resultado de la re-auditoría (mismas 18 mediciones, tras `build`)
+
+| Ancho | Resultado |
+|---|---|
+| **360 px** | ✅ 6/6 vistas: **0** táctiles < 44, **0** inputs < 16, reserva 96 px, sin desbordes horizontales ni elementos fuera de pantalla |
+| **768 px** | ✅ 6/6 vistas: reserva **96 px** (antes 24 — hallazgo 1 corregido), **0** táctiles < 44, **0** inputs < 16, sin desbordes |
+| **1024 px** | ✅ Comportamiento deseado: barra lateral visible, reserva 32 px, sin desbordes; conserva tamaños compactos e inputs a 14 px (decisión del usuario para escritorio) |
+
+Comprobaciones complementarias: diálogos con tope
+`w-full max-w-[calc(100%-2rem)]` + `sm:max-w-*` ✅ · no hay `<Table>`
+(las listas ya son tarjetas) ✅ · los textos recortados detectados son
+elipsis intencional de la clase `truncate` ✅ · el `grid-cols-2` de las
+tarjetas KPI a 360 px (columnas de 155 px) no desborda ✅.
+
+### Etapa C — validación visual
+
+- **9 capturas presentadas al usuario:** las 6 vistas a 360 px, 2 a
+  768 px (Resumen y Gastos) y 1 a 1024 px (escritorio con barra lateral).
+- Nota honesta: el visor de capturas mezcló el orden de algunas
+  imágenes entre mensajes (defecto de la herramienta de captura, no de
+  la app). La evidencia válida son las **mediciones programáticas** de
+  cada ancho (tabla anterior), que pasan todas.
+
+### Verificación de datos (protocolo obligatorio tras navegar)
+
+| Comprobación | Resultado |
+|---|---|
+| Las 3 claves cifradas presentes y con longitudes **byte idénticas** al baseline | ✅ `expenses` 4725 · `incomes` 73 · `payments` 537 |
+| Desencriptación con validación de hash de integridad | ✅ correcta |
+| Contenido = demo canónico | ✅ 10 gastos (total 3.409.900) · 1 pago (Alquiler 1.200.000) · ingresos `[]` (igual que `createDemoIncomes()`) |
+| Cifras del dashboard iguales al baseline | ✅ "1 de 10 cumplidos · $2.209.900" (3.409.900 − 1.200.000) y "9 compromisos pendientes" |
+| ¿La auditoría escribió datos? | ✅ **No.** Solo se invocó navegación; la app no escribe al cargar ni al navegar (comprobado con recarga: los IV quedan estables). Los IV del registro anterior habían rotado por un re-cifrado de contenido idéntico (el IV es aleatorio por diseño) sin pérdida de datos |
+
+### Calidad
+
+`npm run lint` → **0 errores, 0 avisos** · `npm run build` → OK con
+tipos · `out/` regenerado y re-auditado.
+
+**Archivos tocados:** `src/` (10): `app/page.tsx`, `Dashboard.tsx`,
+`IncomeManager.tsx`, `Settings.tsx`, `UpdateManager.tsx`,
+`ui/button.tsx`, `ui/input.tsx`, `ui/select.tsx`, `ui/tabs.tsx`,
+`ui/dropdown-menu.tsx`. Documentos: `AGENTS.md`, `CAMBIOS.md`,
+`AGENT.MD`.
+
+**Commit:** `+18`.
+
 ---
 
 *Proyecto original: Reivaj640 / Mis-Gastos-VSCode · Licencia MIT · Atribución conservada*

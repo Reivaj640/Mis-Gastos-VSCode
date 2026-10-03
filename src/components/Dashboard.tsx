@@ -663,7 +663,7 @@ function CollapsiblePaidSection({
     <div>
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-center gap-1 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        className="w-full min-h-11 lg:min-h-0 flex items-center justify-center gap-1 py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
         {open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
         {items.length} pago{items.length !== 1 ? "s" : ""} realizado{items.length !== 1 ? "s" : ""}

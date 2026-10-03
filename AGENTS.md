@@ -113,7 +113,7 @@ claves sin pedir aprobación. Hacerlo rompe los datos del usuario.
 
 ---
 
-## 📐 Diseño responsivo (reglas UI/UX — pendiente #11, Etapa A aprobada)
+## 📐 Diseño responsivo (reglas UI/UX — #11 cerrado el 2026-10-03)
 
 **Objetivo:** que la app se vea y se use bien en celular, tablet y
 escritorio sin romper las reglas visuales. Toda vista nueva o modificada
@@ -122,21 +122,24 @@ debe cumplir esta tabla:
 | Regla | Cómo se cumple |
 |---|---|
 | **Primero el celular** | Diseñar para 360 px y subir con las escalas de Tailwind: `sm:` 640 · `md:` 768 · `lg:` 1024 · `xl:` 1280 |
-| **Zonas de toque** | Botones e íconos táctiles ≥ 44 × 44 px (p. ej. `min-h-11 min-w-11` o `p-3` en botones pequeños) |
-| **Sin zoom automático (iOS)** | Campos de texto con fuente ≥ 16 px (`text-base`); `text-sm` solo a partir de `sm:` |
-| **Navegación** | Celular: barra inferior (`lg:hidden fixed bottom-0` + `safe-area-bottom`). Escritorio: barra lateral (`hidden lg:flex`). El contenido principal reserva `pb-24 lg:pb-8` |
+| **Zonas de toque** | Botones e íconos táctiles ≥ 44 × 44 px **por debajo de 1024 px** (celular/tablet; el escritorio conserva sus tamaños compactos de 28–36 px — decisión del usuario). En la práctica: `min-h-11 min-w-11 lg:min-h-0 lg:min-w-0` en los primitivos `ui/`. **Excepción:** la X dentro de un chip = 24 px (altura máxima posible sin romper el chip) |
+| **Sin zoom automático (iOS)** | Campos de texto con fuente ≥ 16 px hasta 1024 px (`ui/input.tsx`: `text-base` + `lg:text-sm`); `text-sm` recién a partir de `lg:` — con `md:text-sm`, el iPhone horizontal (844–932 px) hacía zoom al enfocar |
+| **Navegación** | Celular: barra inferior (`lg:hidden fixed bottom-0` + `safe-area-bottom`). Escritorio: barra lateral (`hidden lg:flex`). El contenido principal reserva `pb-24 md:pb-24 lg:pb-8 xl:pb-10` — **el `md:pb-24` es obligatorio**: sin él, `md:p-6` pisa al `pb-24` y en 768–1023 px quedan solo 24 px de fondo con la barra (64 px) tapando lo último |
 | **Bordes y gestos** | Conservar `safe-area-*` (notch, barra de gestos) — no quitarlos al reutilizar estilos |
-| **Cuadrículas** | Empezar en `grid-cols-1` y subir con `sm:`/`md:`/`lg:` — nunca fijar varias columnas sin adaptación |
+| **Cuadrículas** | Empezar en `grid-cols-1` y subir con `sm:`/`md:`/`lg:` — nunca fijar varias columnas sin adaptación. Las tarjetas compactas tipo KPI pueden ir en 2 columnas a 360 px si no desbordan (medido: 155 px por columna, sin recortes) |
 | **Diálogos** | Con tope de ancho (`sm:max-w-md`, `w-full max-w-[calc(100%-2rem)]`) — jamás salirse de la pantalla |
 | **Tablas/listas anchas** | `overflow-x-auto` o reordenar a tarjetas en móvil |
 | **Colores** | Solo variables CSS OKLCH (misma regla de siempre) |
 | **Orientación** | Funcionar en vertical y horizontal; no asumir alturas fijas (salvo barras laterales con `h-screen`) |
 
-**Validación:** revisar cada vista a **360 / 768 / 1024 px** (ventana
-redimensionada, o desde el celular/tablet por la red con
-`npm run preview:network`). Las etapas **B** (auditoría por vista) y
-**C** (validación visual con el usuario) quedan **pendientes de
-aprobación**.
+**Validación (ejecutada 2026-10-03):** cada vista se midió a
+**360 / 768 / 1024 px** (iframe del mismo origin, o desde el
+celular/tablet por la red con `npm run preview:network`) y se corrigió
+lo evidente. Resultado: **sin desbordes horizontales, sin elementos
+fuera de pantalla, 0 táctiles < 44 px y 0 inputs < 16 px en
+celular/tablet** (6/6 vistas); escritorio conserva sus tamaños
+compactos. El detalle de hallazgos y arreglos está en `CAMBIOS.md`
+(2026-10-03, commit `+18`).
 
 ---
 
@@ -154,6 +157,7 @@ aprobación**.
 | Service worker (`sw.js` v3) | ✅ Corregido | Primero la red (siempre versión fresca) con copia de respaldo sin conexión; ver `CAMBIOS.md` |
 | Zustand (`useAppStore.ts`) | ✅ En uso | Puente en `page.tsx`: historial deshacer/rehacer (1 acción = 1 paso); guarda en las mismas 4 claves encriptadas |
 | Ejecutable Windows (`npm run build:exe`) | ✅ Construido y probado | `Mis-Gastos-Setup.exe` (NSIS) + `Mis-Gastos.exe` (portable) en `dist-electron/`; puerto interno aleatorio `127.0.0.1` (no toca 3000/4000); cerrar la app = X de la ventana (eso sí persiste los datos); reparación de caché `winCodeSign` explicada en `CAMBIOS.md` (2026-10-03) |
+| Auditoría responsive (#11) | ✅ Cerrada | 6 vistas medidas a 360/768/1024 px y corregidas; 44 px de toque en móvil/tablet, fondo de tablet y anti-zoom iOS arreglados; ver `CAMBIOS.md` (2026-10-03, `+18`) |
 
 > 📌 El **estado vivo** de cada sesión está en `AGENT.MD` — léelo antes de empezar.
 
