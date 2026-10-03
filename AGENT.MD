@@ -16,14 +16,21 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | | |
 |---|---|
 | **Fecha** | 2026-10-02 |
-| **Sesión** | Guardar en Git la solución de red + crear este archivo |
-| **Estado** | ✅ Estable — sin cambios pendientes de guardar |
+| **Sesión** | Evaluación de los 6 pendientes + Etapa 1 de limpieza (aprobada) |
+| **Estado** | ✅ Estable — todo guardado en Git |
 
 ### Qué se hizo en esta sesión
-1. Se revisó el estado del proyecto (rama `main`, 6 commits, sin errores).
-2. Se guardó en Git el trabajo de la sesión anterior que quedó **sin commit**
-   → commit `99a561d` — "Solucionar carga por red local con comando preview:network".
-3. Se creó este archivo `AGENT.MD`.
+1. Se evaluaron los 6 pendientes contra el código real (veredicto abajo).
+2. **Etapa 1 ejecutada y verificada** (aprobada por el usuario): `metadataBase` +,
+   se quitó la referencia a `og-image.png` inexistente, se borraron el comando
+   `start`, los comandos `db:*`, `src/lib/db.ts` y el `.env`.
+3. Verificación: `npm run build` ✅ (6.3 s, sin avisos) · HTML correcto · commit `53e4b9c`.
+4. Detectados 2 pendientes nuevos (#7 tipado ignorado, #8 lint sin configuración).
+
+### Sesión anterior
+1. Se revisó el estado del proyecto y se guardó en Git el trabajo de la red
+   → commit `99a561d`.
+2. Se creó este archivo `AGENT.MD` → commit `9ba8d8c`.
 
 ---
 
@@ -31,9 +38,11 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 
 | Pieza | Estado | Notas |
 |---|---|---|
-| Compilación (`npm run build`) | ✅ Funciona | Sin errores, genera carpeta `out/` |
+| Compilación (`npm run build`) | ✅ Funciona | Sin errores y **sin avisos** (6.3 s), genera carpeta `out/` |
 | App en este equipo (`npm run dev`) | ✅ Funciona | http://localhost:3000 |
 | App por red (`npm run preview:network`) | ✅ Funciona | Puerto 4000, muestra la dirección sola. **Confirmado por el usuario** |
+| Enlace al compartir (OpenGraph) | ✅ Corregido | `metadataBase` puesta; sin imágenes rotas |
+| Revisión de errores (`npm run lint`) | ⚠️ No funciona | Nunca funcionó: falta la configuración de ESLint 9 → pendiente #8 |
 | Instalador Windows (`npm run build:exe`) | ⬜ No probado en esta sesión | Genera `.exe` en `dist-electron/` |
 | Control de versiones (Git) | ✅ Activo | Rama `main`, **sin cambios sin guardar** |
 | Datos del usuario | ✅ Intactos | Encriptados en el navegador (AES-GCM), no se tocaron |
@@ -48,7 +57,8 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 |---|---|---|
 | 2026-10-02 | Puesta en marcha: Git activado, prompt unificado, `CAMBIOS.md` creado. **Cero cambios en el código de la app** | `f68a431` → `7462bc4` → `6673a05` |
 | 2026-10-02 | Arranque en Windows arreglado (`tee` eliminado) + diagnóstico del loop de carga por red | `5c87754`, `9575e0e` |
-| 2026-10-02 | Solución de red aplicada y verificada (guardada en esta sesión) + creación de `AGENT.MD` | `99a561d` |
+| 2026-10-02 | Solución de red guardada + creación de `AGENT.MD` | `99a561d`, `9ba8d8c` |
+| 2026-10-02 | Evaluación de los 6 pendientes + Etapa 1 ejecutada (metadataBase, limpieza de comandos y sobras) | `53e4b9c` |
 
 **Punto de retorno al estado original de Javier:** `git checkout f68a431 -- .`
 
@@ -56,16 +66,23 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 
 ## ⚠️ Pendientes detectados (NO corregidos — requieren decisión)
 
-Ordenados por importancia. **Ninguno afecta el funcionamiento actual.**
+**Prioridad según la última evaluación (2026-10-02):**
 
-| # | Qué | Por qué quedó |
+| # | Qué | Riesgo | Por qué quedó |
+|---|---|---|---|
+| **1** | **Service worker `public/sw.js` usa "primero la copia"** | **MEDIO** | Es el motor de actualizaciones internas. En este equipo puede mostrar una versión vieja tras recompilar; en otros equipos no se activa. **Siguiente etapa:** ajuste a "primero la red" en el camino normal, conservando la copia para actualizaciones oficiales — con pruebas |
+| 6 | Zustand (`src/store/useAppStore.ts`) no está en uso | Nulo | Reservado por el prompt para el futuro "deshacer/rehacer". **No borrar** |
+| 7 | `next.config.ts` ignora errores de tipado (`ignoreBuildErrors: true`) | Medio a futuro | Heredado del original. Un error de tipo pasaría desapercibido en el build |
+| 8 | `npm run lint` siempre falla | Bajo | Falta la configuración de ESLint 9 (`eslint.config.*`). Ojo: `AGENTS.md` decía que funcionaba — ya quedó corregido |
+
+### Resueltos en la Etapa 1 (2026-10-02, commit `53e4b9c`)
+
+| # | Pendiente | Cómo quedó |
 |---|---|---|
-| 1 | Service worker `public/sw.js` usa "primero la caché" | Puede mostrar una versión vieja de la app. Riesgo latente, no causó el problema de red. Requiere autorización para tocarlo |
-| 2 | Falta `metadataBase` en los datos de la página | Aviso menor de compilación: solo afecta cómo se ven los enlaces al compartir en redes sociales |
-| 3 | Archivo `.env` tiene una ruta del computador de Javier | No causa problemas (la app no usa esa base de datos). Limpieza futura |
-| 4 | Comando `npm run start` usa `tee` y `bun` | Igual que el antiguo `dev`: no funciona en Windows. **No se usa** — la app se abre con `dev` o `preview:network` |
-| 5 | Comandos `db:*` (Prisma) sobran | La app no usa base de datos (todo va en el navegador). Sobran del proyecto original |
-| 6 | Zustand (`src/store/useAppStore.ts`) no está en uso | Existe pero las vistas usan `useLocalStorage`. **No lo uses como si gobernara el estado** |
+| 2 | `metadataBase` + `og-image.png` inexistente | ✅ `metadataBase` puesta; referencia a la imagen rota quitada |
+| 3 | `.env` con ruta de Javier | ✅ Borrado (no estaba en Git, nadie lo leía) |
+| 4 | `npm run start` roto (bun/tee/Windows) | ✅ Comando eliminado |
+| 5 | Comandos `db:*` sin `schema.prisma` + `db.ts` muerto | ✅ Comandos y documento eliminados |
 
 ---
 

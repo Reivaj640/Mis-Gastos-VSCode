@@ -208,4 +208,47 @@ confirmada, pero **no se había creado el punto de retorno en Git**.
 
 ---
 
+## 2026-10-02 — Evaluación de los 6 pendientes y Etapa 1 ejecutada
+
+### Evaluación (diagnóstico contra el código real)
+
+| # | Pendiente | Qué se encontró | Riesgo | Veredicto |
+|---|---|---|---|---|
+| 1 | Service worker | Es el motor del sistema de actualizaciones internas (UpdateManager). Estrategia "primero la copia": nunca refresca en el camino normal → este equipo puede ver versiones viejas tras recompilar. En otros equipos NO se activa (los navegadores lo rechazan en HTTP de red). No toca datos | **Medio** | **Pendiente — Etapa 2 aparte** |
+| 2 | `metadataBase` | Faltaba en `layout.tsx`; además la imagen `og-image.png` referenciada **no existía** en `public/` | Nulo | ✅ Corregido |
+| 3 | `.env` | Una sola línea con la ruta vieja de Javier; nadie la lee; no está en Git; sin secretos | Nulo | ✅ Borrado |
+| 4 | `npm run start` | Roto de 4 formas: `bun` no instalado, `tee` solo Linux, entorno incompatible con Windows y `.next/standalone` no existe (la app exporta estático) | Nulo | ✅ Comando eliminado |
+| 5 | Comandos `db:*` | **No existe ningún `schema.prisma`** en el proyecto → siempre fallarían; `src/lib/db.ts` no lo importaba nadie | Nulo | ✅ Comandos y `db.ts` eliminados |
+| 6 | Zustand `useAppStore` | Nadie lo importa (no entra en la app compilada) y el prompt lo reserva para el futuro "deshacer/rehacer" | Nulo | Se mantiene documentado |
+
+### Hallazgos nuevos detectados durante la evaluación (reportados, no corregidos)
+
+| # | Hallazgo | Detalle |
+|---|---|---|
+| 7 | `next.config.ts` ignora errores de tipado | `typescript: { ignoreBuildErrors: true }` hace que el build pase aunque haya errores de tipo. Contradice el tipado estricto del prompt. Heredado del original |
+| 8 | `npm run lint` nunca funcionó | ESLint 9 exige `eslint.config.*` y **no existe** en el proyecto → el comando falla siempre. La fila correspondiente de `AGENTS.md` quedó corregida |
+
+### Cambios ejecutados (Etapa 1 — aprobada por el usuario)
+
+| Archivo | Cambio |
+|---|---|
+| `src/app/layout.tsx` | + `metadataBase: new URL("https://misgastos.app")`; se quitó la referencia a `og-image.png` (no existe); `twitter.card` → `summary` |
+| `package.json` | − comando `start`; − comandos `db:push`, `db:generate`, `db:migrate`, `db:reset` |
+| `src/lib/db.ts` | Borrado (nadie lo importaba; verificado antes y después) |
+| `.env` | Borrado (no estaba en Git) |
+
+### Verificación
+
+| Prueba | Resultado |
+|---|---|
+| `npm run lint` | ⚠️ Falla por causa preexistente (pendiente #8), no por estos cambios |
+| `npm run build` | ✅ Correcto en 6.3 s, **sin el aviso de `metadataBase`** |
+| HTML generado (`out/index.html`) | ✅ URLs absolutas de OpenGraph, sin `og:image` roto, UTF-8 intacto |
+| Búsquedas de `lib/db` y `DATABASE_URL` | ✅ Cero referencias en todo el proyecto |
+| Commit | `53e4b9c` |
+
+**No se tocó:** el service worker, Zustand, las dependencias instaladas, el esquema de datos ni ningún módulo de la app.
+
+---
+
 *Proyecto original: Reivaj640 / Mis-Gastos-VSCode · Licencia MIT · Atribución conservada*

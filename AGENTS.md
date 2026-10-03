@@ -14,7 +14,7 @@ Archivo de contexto para cualquier agente que trabaje en este proyecto.
 |---|---|
 | Ver la app en ESTE equipo | `npm run dev` → http://localhost:3000 |
 | Ver la app en OTROS equipos de tu red | `npm run build` → `npm run preview:network` → muestra la dirección sola |
-| Verificar errores | `npm run lint` |
+| Revisar errores | `npm run lint` ⚠️ **Hoy falla**: le falta la configuración de ESLint 9 (pendiente #8 de `AGENT.MD`). Mientras tanto, `npm run build` es la verificación confiable |
 | Ver lo que está mal sin conmovernos | `npm run build` |
 | Volver al código original de Javier | `git log --oneline` y `git checkout f68a431 -- .` |
 
@@ -111,10 +111,13 @@ claves sin pedir aprobación. Hacerlo rompe los datos del usuario.
 | Arranque local (`npm run dev`) | ✅ Funciona | Para este equipo |
 | Arranque de red (`npm run preview:network`) | ✅ Funciona | Para probar en otros equipos |
 | Compilación (`npm run build`) | ✅ Sin errores | Genera carpeta `out/` |
+| Revisión de errores (`npm run lint`) | ⚠️ No funciona | Sin configuración de ESLint 9 (pendiente #8) |
 | Dependencias (`node_modules`) | ✅ Instaladas | 1100 paquetes |
 | Control de versiones (Git) | ✅ Activo | Rama `main` |
-| Service worker | ⚠️ Riesgo latente | Cache-first en desarrollo; ver `CAMBIOS.md` |
-| Zustand (`useAppStore.ts`) | ⚠️ No en uso | No lo uses como si gobernara todo |
+| Service worker | ⚠️ Pendiente #1 | "Primero la copia": puede servir versiones viejas en este equipo; en otros equipos no se activa |
+| Zustand (`useAppStore.ts`) | ⚠️ No en uso | Reservado para el futuro "deshacer/rehacer"; no borrar |
+
+> 📌 El **estado vivo** de cada sesión está en `AGENT.MD` — léelo antes de empezar.
 
 ---
 
