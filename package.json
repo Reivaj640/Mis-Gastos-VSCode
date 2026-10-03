@@ -5,7 +5,7 @@
   "description": "Control de Gastos Mensuales",
   "main": "electron/main.js",
   "scripts": {
-    "dev": "next dev -p 3000 2>&1 | tee dev.log",
+    "dev": "next dev -p 3000",
     "build": "next build",
     "build:static": "next build",
     "build:exe": "npm run build:static && electron-builder --win --x64",

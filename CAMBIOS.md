@@ -93,6 +93,82 @@ de la página. No afecta el funcionamiento: solo afecta cómo se ven los
 enlaces al compartir la app en redes sociales. Queda anotado para
 cuando se decida trabalhar en eso.
 
+---
+
+## 2026-10-02 — Arranque en Windows y diagnóstico del loop de carga
+
+### 1) Arreglado el botón de arranque (autorizado por el usuario)
+
+**Problema:** el comando de arranque del proyecto no funcionaba en
+Windows porque usaba `tee`, una instrucción que solo existe en Linux.
+
+**Qué se cambió** — una línea en `package.json`:
+
+| | Antes | Después |
+|---|---|---|
+| Comando de arranque | `next dev -p 3000 2>&1 | tee dev.log` | `next dev -p 3000` |
+
+**Por qué:** `tee` solo servía para guardar un archivo de registro que no
+se usa para nada. Al quitarlo, el comando ahora funciona igual en
+Windows, Mac y Linux.
+
+**Efecto colateral:** el proyecto ya no genera el archivo `dev.log`.
+No afecta la aplicación.
+
+**Verificado:** el comando arranca correctamente en Windows.
+
+### 2) Loop de carga al abrir por la dirección de red — DIAGNÓSTICO
+
+**Síntoma:** al abrir `http://192.168.1.6:3000` desde otro equipo, la
+aplicación se queda en "Cargando Mis Gastos" para siempre. En Visual
+Studio Code sí funciona.
+
+**Causa encontrada: el "service worker" (archivo `public/sw.js`).**
+
+Cómo funciona ese archivo, en simple:
+- Es un archivo que el navegador guarda en el equipo del usuario.
+- Se activa la **primera vez** que el usuario entra a la pantalla de
+  **Configuración** (se registra en `src/components/UpdateManager.tsx`).
+- Desde ese momento, el navegador **deja de pedir las versiones nuevas**
+  y usa siempre una copia antigua que tiene guardada.
+
+**Por qué eso causa el loop:**
+1. En desarrollo, cada vez que el programa se modifica, los archivos de
+   la página cambian de nombre.
+2. El navegador sigue sirviendo la copia antigua, que apunta a archivos
+   que **ya no existen**.
+3. La pantalla se dibuja, pero el código que la hace funcionar nunca
+   carga → **queda congelada en "Cargando Mis Gastos"**.
+
+**Por qué funciona en Visual Studio Code y no por la red:** son
+direcciones distintas (`localhost` y `192.168.1.6`), y el navegador
+guarda sus archivos por separado. Solo la dirección de red quedó con la
+copia dañada.
+
+**Prueba realizada:** el servidor responde bien en las dos direcciones
+(72 referencias a archivos de código en ambas). El problema **no está en
+el servidor**, está en la copia guardada en ese navegador.
+
+**Solución inmediata (sin tocar nada):** abrir la aplicación en una
+**ventana de incógnito / ventana privada** del navegador. Como es un
+navegador "limpio", no usa la copia dañada.
+
+**Solución de fondo (propuesta, PENDIENTE de autorización):** que el
+service worker solo se active en la versión ya publicada, y **nunca
+mientras se está desarrollando**. Son 3 líneas en
+`src/components/UpdateManager.tsx` y **no afecta** la versión final que
+se distribuye.
+
+> **No apliqué la solución de fondo** porque modifica el código de la
+> aplicación y la regla acordada es pedir autorización antes.
+
+### 3) Otro detalle detectado (sin acción)
+
+El archivo `.env` contiene una ruta del computador de Javier
+(`/home/z/my-project/...`). No causa ningún problema: la aplicación no
+usa esa base de datos, guarda todo en el navegador del usuario. Queda
+anotado solo por limpieza futura.
+
 ### Estado de Git (para volver atrás)
 
 | Quiero... | Qué se hace |
