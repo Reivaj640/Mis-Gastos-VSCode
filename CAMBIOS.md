@@ -117,50 +117,49 @@ No afecta la aplicación.
 
 **Verificado:** el comando arranca correctamente en Windows.
 
-### 2) Loop de carga al abrir por la dirección de red — DIAGNÓSTICO
+### 2) Loop de carga al abrir por la dirección de red — EN INVESTIGACIÓN
 
 **Síntoma:** al abrir `http://192.168.1.6:3000` desde otro equipo, la
 aplicación se queda en "Cargando Mis Gastos" para siempre. En Visual
-Studio Code sí funciona.
+Studio Code sí funciona. También falla en ventana de incógnito.
 
-**Causa encontrada: el "service worker" (archivo `public/sw.js`).**
+**Primera hipótesis (DESCARTADA):** el service worker `public/sw.js`.
+Se probó en ventana privada, que no usa copias guardadas, y el problema
+sigue. Por lo tanto **no es el service worker**.
 
-Cómo funciona ese archivo, en simple:
-- Es un archivo que el navegador guarda en el equipo del usuario.
-- Se activa la **primera vez** que el usuario entra a la pantalla de
-  **Configuración** (se registra en `src/components/UpdateManager.tsx`).
-- Desde ese momento, el navegador **deja de pedir las versiones nuevas**
-  y usa siempre una copia antigua que tiene guardada.
+> Nota: el service worker sigue siendo un riesgo latente (guarda copia
+> vieja en modo "primero la caché"), pero **no es la causa** de este
+> problema. Se deja anotado para más adelante, no se toca ahora.
 
-**Por qué eso causa el loop:**
-1. En desarrollo, cada vez que el programa se modifica, los archivos de
-   la página cambian de nombre.
-2. El navegador sigue sirviendo la copia antigua, que apunta a archivos
-   que **ya no existen**.
-3. La pantalla se dibuja, pero el código que la hace funcionar nunca
-   carga → **queda congelada en "Cargando Mis Gastos"**.
+**Lo que sí se comprobó:**
 
-**Por qué funciona en Visual Studio Code y no por la red:** son
-direcciones distintas (`localhost` y `192.168.1.6`), y el navegador
-guarda sus archivos por separado. Solo la dirección de red quedó con la
-copia dañada.
+| Comprobación | Resultado |
+|---|---|
+| El servidor responde en `localhost:3000` | ✅ HTTP 200, 18.186 bytes |
+| El servidor responde en `192.168.1.6:3000` | ✅ HTTP 200, 18.186 bytes |
+| La página include referencias a sus archivos de código | ✅ 72 referencias |
+| El código de arranque puede quedarse colgado | ❌ Imposible: siempre termina |
 
-**Prueba realizada:** el servidor responde bien en las dos direcciones
-(72 referencias a archivos de código en ambas). El problema **no está en
-el servidor**, está en la copia guardada en ese navegador.
+**Hallazgo clave:** se revisó el código a fondo y **no existe forma de que
+la aplicación se quede esperando**. La pantalla de carga desaparece en
+menos de un segundo, siempre. Que se quede congelada significa que
+**el navegador nunca llegó a ejecutar el código de la página**.
 
-**Solución inmediata (sin tocar nada):** abrir la aplicación en una
-**ventana de incógnito / ventana privada** del navegador. Como es un
-navegador "limpio", no usa la copia dañada.
+**Causa más probable: el navegador está bloqueando el código.**
+En la captura del usuario se observa que el navegador usado es **Brave**
+y que su escudo de seguridad muestra un **"2" rojo**, que es la señal de
+"2 elementos bloqueados". La página se ve, pero su código no.
 
-**Solución de fondo (propuesta, PENDIENTE de autorización):** que el
-service worker solo se active en la versión ya publicada, y **nunca
-mientras se está desarrollando**. Son 3 líneas en
-`src/components/UpdateManager.tsx` y **no afecta** la versión final que
-se distribuye.
+La dirección `192.168.1.6:3000` no es segura (no usa candado) porque es
+HTTP, y los navegadores con protección extra bloquean con más facilidad
+el código en ese tipo de direcciones.
 
-> **No apliqué la solución de fondo** porque modifica el código de la
-> aplicación y la regla acordada es pedir autorización antes.
+**Prueba pendiente:** abrir la misma dirección en **Google Chrome** o
+**Microsoft Edge** y confirmar si ahí sí carga.
+
+**Pendiente de tu autorización:** según el resultado de esa prueba, se
+decide la solución (probablemente ninguno de los dos navegadores con
+protección, o desactivar la protección solo para esa dirección).
 
 ### 3) Otro detalle detectado (sin acción)
 
