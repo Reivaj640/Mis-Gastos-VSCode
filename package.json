@@ -8,6 +8,7 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "build:static": "next build",
+    "preview:network": "node scripts/serve-network.cjs",
     "build:exe": "npm run build:static && electron-builder --win --x64",
     "release": "npm run build:static && electron-builder --win --publish always",
     "start": "NODE_ENV=production bun .next/standalone/server.js 2>&1 | tee server.log",

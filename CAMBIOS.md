@@ -117,49 +117,54 @@ No afecta la aplicación.
 
 **Verificado:** el comando arranca correctamente en Windows.
 
-### 2) Loop de carga al abrir por la dirección de red — EN INVESTIGACIÓN
+### 2) Loop de carga al abrir por la red — RESUELTO ✅
 
 **Síntoma:** al abrir `http://192.168.1.6:3000` desde otro equipo, la
-aplicación se queda en "Cargando Mis Gastos" para siempre. En Visual
-Studio Code sí funciona. También falla en ventana de incógnito.
+aplicación se quedaba en "Cargando Mis Gastos" para siempre. En el mismo
+equipo sí funcionaba.
 
-**Primera hipótesis (DESCARTADA):** el service worker `public/sw.js`.
-Se probó en ventana privada, que no usa copias guardadas, y el problema
-sigue. Por lo tanto **no es el service worker**.
+**Hipótesis descartadas durante la investigación:**
 
-> Nota: el service worker sigue siendo un riesgo latente (guarda copia
-> vieja en modo "primero la caché"), pero **no es la causa** de este
-> problema. Se deja anotado para más adelante, no se toca ahora.
-
-**Lo que sí se comprobó:**
-
-| Comprobación | Resultado |
+| Hipótesis | Cómo se descartó |
 |---|---|
-| El servidor responde en `localhost:3000` | ✅ HTTP 200, 18.186 bytes |
-| El servidor responde en `192.168.1.6:3000` | ✅ HTTP 200, 18.186 bytes |
-| La página include referencias a sus archivos de código | ✅ 72 referencias |
-| El código de arranque puede quedarse colgado | ❌ Imposible: siempre termina |
+| Service worker `public/sw.js` | Fallaba igual en ventana de incógnito (que no usa copias guardadas) |
+| Navegador bloqueando (Brave) | Reprodujo igual en Chrome y Edge |
+| Código de la app colgado | Revisado a fondo: termina en menos de 1 segundo, siempre |
+| Servidor sin enviar archivos | Los 21 archivos responden bien (HTTP 200) |
 
-**Hallazgo clave:** se revisó el código a fondo y **no existe forma de que
-la aplicación se quede esperando**. La pantalla de carga desaparece en
-menos de un segundo, siempre. Que se quede congelada significa que
-**el navegador nunca llegó a ejecutar el código de la página**.
+**CAUSA REAL (confirmada con la foto de la consola del navegador):**
 
-**Causa más probable: el navegador está bloqueando el código.**
-En la captura del usuario se observa que el navegador usado es **Brave**
-y que su escudo de seguridad muestra un **"2" rojo**, que es la señal de
-"2 elementos bloqueados". La página se ve, pero su código no.
+```
+WebSocket connection to 'ws://192.168.1.6:3000/_next/webpack-hmr' failed.
+```
 
-La dirección `192.168.1.6:3000` no es segura (no usa candado) porque es
-HTTP, y los navegadores con protección extra bloquean con más facilidad
-el código en ese tipo de direcciones.
+Es la **conexión de recarga automática** que usa el modo desarrollo.
+El servidor de desarrollo pesa **6,7 MB** (con un archivo de 1 MB) y
+mantiene esa conexión abierta. En red local se corta (el equipo tiene
+dos conexiones activas: cable en 192.168.1.6 y Wi-Fi en 192.168.1.8),
+la recarga nunca se completa y la app se queda esperando.
 
-**Prueba pendiente:** abrir la misma dirección en **Google Chrome** o
-**Microsoft Edge** y confirmar si ahí sí carga.
+### SOLUCIÓN APLICADA Y VERIFICADA
 
-**Pendiente de tu autorización:** según el resultado de esa prueba, se
-decide la solución (probablemente ninguno de los dos navegadores con
-protección, o desactivar la protección solo para esa dirección).
+Se creó `scripts/serve-network.cjs` y el comando `npm run preview:network`.
+
+Sirve la versión **ya compilada** (la misma que se publicaría): pesa
+**1,3 MB**, no usa la conexión que fallaba, y es estable en red local.
+
+| Quiero... | Comando | Dirección |
+|---|---|---|
+| Ver la app en ESTE equipo (trabajar) | `npm run dev` | `http://localhost:3000` |
+| Ver la app en OTROS equipos | `npm run build` + `npm run preview:network` | Se muestra sola al arrancar (puerto 4000) |
+
+Al arrancar, el comando muestra la dirección exacta en pantalla.
+
+**Verificación:**
+
+| Prueba | Resultado |
+|---|---|
+| `npm run preview:network` arranca | ✅ Muestra la dirección sola |
+| Cargar en la red desde otro equipo | ✅ **Confirmado por el usuario: funciona** |
+| Compilar y abrir en este equipo | ✅ Funciona |
 
 ### 3) Otro detalle detectado (sin acción)
 
