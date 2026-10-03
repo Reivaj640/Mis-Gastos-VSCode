@@ -402,4 +402,93 @@ dependencias nuevas**. Archivos tocados: `eslint.config.mjs` (nuevo),
 
 ---
 
+## 2026-10-02 — Pendiente #6: Zustand activado con deshacer/rehacer 1 a 1
+
+**Autorización del usuario:** *"implementemos el pendiente #6 y luego el
+#10, ejecuta pruebas validando que todo funcione y que no se afecte el
+estado actual del sistema"*.
+
+### Qué se hizo
+
+**1. El store `useAppStore.ts` pasó de dormido a activo (patrón puente)**
+- **Por qué:** era el pendiente #6 — tener deshacer/rehacer real sin
+  perder datos y sin cambiar el formato de guardado.
+- **Cómo quedó:** `page.tsx` es el único puente (sigue siendo el único
+  archivo que usa `useLocalStorage`). Al terminar la desencriptación de
+  las 4 claves, carga los datos en el store; a partir de ahí:
+  - **Lectura:** las vistas reciben los datos del store (mismas
+    propiedades de siempre).
+  - **Escritura:** las vistas llaman a `setExpenses`/`setPayments`/
+    `setIncomes`/`setSettings` como siempre, pero esos nombres ahora
+    apuntan a las **acciones del store**, que registran cada cambio en el
+    historial.
+  - **Guardado:** el store escribe en las **mismas 4 claves encriptadas**
+    (`expenses`, `payments`, `incomes`, `appSettings`), comparando
+    **por contenido** — si deshacer restaura un contenido idéntico, la
+    clave no se reescribe.
+- **Las vistas (`ExpensesManager`, `Settings`, etc.) NO se tocaron** —
+  reciben exactamente las mismas propiedades.
+
+**2. Se corrigieron 2 fallas que el store dormido nunca había ejecutado**
+- `initialize` metía el estado vacío en el historial → el primer Ctrl+Z
+  habría **borrado todos los datos**. Ahora la carga inicial no genera
+  historial (no se puede "deshacer" la propia carga).
+- `undo`/`redo` tenían desfase de un paso (deshacía de más). Se
+  reescribieron con pila correcta: **1 acción = 1 entrada = 1 paso**;
+  además `redo` ahora usa una pila propia (`future`) que se limpia al
+  hacer una acción nueva.
+
+**3. Se quitó la persistencia en texto plano del store**
+- El middleware `persist` escribía `mis-gastos-storage` **sin encriptar**
+  (copia del dato real en claro). Eliminado: solo existen las 4 claves
+  cifradas de siempre. El store vive en memoria y se recarga desde las
+  claves al abrir la app.
+
+**4. Interfaz y atajos**
+- Dos botones flotantes (abajo a la derecha) con iconos lucide
+  `Undo2`/`Redo2`: aparecen solo cuando hay historial, con estados
+  habilitado/deshabilitado.
+- Atajos: `Ctrl+Z` deshacer · `Ctrl+Y` o `Ctrl+Shift+Z` rehacer — se
+  desactivan dentro de campos de texto (no roban el deshacer nativo).
+
+**5. El gancho `useLocalStorage` ganó una marca de "datos listos"**
+- Tercer elemento de la tupla: `[valor, escribir, listo]`. Solo marca que
+  la desencriptación terminó — **ni una línea de encriptación se tocó**.
+
+### Cómo se protegió tu dato (regla de oro)
+
+- **Mismas 4 claves, mismo formato `{data, hash, iv}`, misma contraseña.**
+  Cero cambios de formato.
+- Escrituras **por contenido**: deshacer/rehacer de un gasto no reescribe
+  `payments`/`incomes`/`appSettings` (verificado byte a byte).
+- La carga de la app **no escribe nada** en las claves (hidratación pura).
+
+### Pruebas (navegador real, `preview:network` puerto 4000)
+
+| Prueba | Resultado |
+|---|---|
+| Claves antes/después de cargar la versión nueva | ✅ **byte idénticas** (cero escrituras en reposo) |
+| Dashboard con datos reales | ✅ "1 de 10 cumplidos", montos correctos |
+| Crear gasto de prueba | ✅ 11 gastos; solo cambió `expenses`; `payments`/`incomes` byte idénticos |
+| `Ctrl+Z` tras 1 acción | ✅ vuelve a 10 en **1 paso**; un segundo Ctrl+Z NO borró datos (bug corregido) |
+| `Ctrl+Y` | ✅ restaura exactamente el gasto |
+| Estados de botones en cada paso | ✅ correctos (habilitado/deshabilitado) |
+| Recarga tras el ciclo | ✅ datos intactos, historial limpio (botones ausentes), sin escrituras, `appSettings` no apareció |
+| `mis-gastos-storage` | ✅ **nunca se crea** |
+| `npx tsc --noEmit` / `npm run build` | ✅ EXIT 0 / EXIT 0 |
+| `npm run lint` | ✅ 83 = misma línea base (cero problemas nuevos) |
+| Ciclo de puerto | ✅ servidor detenido → **4000 LIBRE** sin huérfanos |
+
+**Archivos tocados:** `src/store/useAppStore.ts` (historial corregido +
+persist fuera), `src/app/page.tsx` (puente + botones + atajos),
+`src/hooks/useLocalStorage.ts` (marca de "datos listos") + los 3
+documentos de trabajo (`AGENT.MD`, `CAMBIOS.md`, `AGENTS.md`).
+
+**Nota:** `Prompt-Mis-Gastos.txt` (Parte II) todavía describe el store
+como "no está en uso" — actualizarlo requiere decisión del usuario.
+
+**Commit:** pendiente de mostrar al usuario (serie `+15`).
+
+---
+
 *Proyecto original: Reivaj640 / Mis-Gastos-VSCode · Licencia MIT · Atribución conservada*

@@ -16,31 +16,36 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | | |
 |---|---|
 | **Fecha** | 2026-10-02 |
-| **Sesión** | Pendientes #7 y #8 ejecutados: build con tipos verificados + ESLint 9 |
+| **Sesión** | Pendiente #6 ejecutado: Zustand activo con deshacer/rehacer 1 a 1 |
 | **Estado** | ✅ Estable — todo guardado en Git |
 
 ### Qué se hizo en esta sesión
-1. **Commit de hito `+13`** (aprobado): estado actual con el formato
-   `símbolo + numeración + resumen ejecutivo` (la serie de commits se
-   numera desde `00`; el siguiente después de este será `+15`).
-2. **#8 resuelto** (autorizado): creado `eslint.config.mjs` (ESLint 9,
-   formato plano, reglas oficiales de Next 16) → `npm run lint` **funciona**
-   y lista 83 problemas preexistentes → nueva deuda = pendiente **#10**.
-3. **#7 resuelto** (autorizado): quitado `ignoreBuildErrors` y reparados
-   los **15 errores de tipado** que ocultaba (imports `@/types` que nunca
-   existió, `paymentService` con `.date`, ámbito de `handler`, firma de
-   encriptación, campos de `AppSettings`) → `tsc` y `build` en verde con
-   verificación **real**.
-4. **Prueba de humo en 4000:** dashboard completo ✅ · servidor detenido →
-   **puerto 4000 LIBRE** ✅.
-5. **#6 (Zustand) intacto:** solo se añadieron a sus 2 literales de
-   configuración los campos oficiales que ya usaba; nada más se tocó.
+1. **#6 resuelto (autorizado):** el store Zustand quedó **activo como
+   puente** en `page.tsx`: las vistas no se tocaron, pero toda escritura
+   pasa por el store (que registra el historial) y se guarda en las
+   **mismas 4 claves encriptadas** de siempre.
+2. **Dos fallas latentes corregidas** (el store dormido nunca las había
+   ejecutado): la carga inicial metía el estado vacío en el historial
+   (el primer Ctrl+Z habría borrado todos los datos) y el deshacer tenía
+   desfase de un paso. Ahora **1 acción = 1 paso exacto**.
+3. **Se quitó** la persistencia en texto plano `mis-gastos-storage` del
+   store (duplicado sin encriptar) → solo existe lo cifrado.
+4. **Interfaz:** botones flotantes deshacer/rehacer (aparecen solo con
+   historial) + atajos `Ctrl+Z` / `Ctrl+Y` (dentro de campos de texto no
+   se activan, para no robar el deshacer nativo).
+5. **Pruebas completas en 4000:** claves byte idénticas al cargar la
+   versión nueva, crear → deshacer → rehacer 1 a 1, recarga sin
+   escrituras, sin `mis-gastos-storage`, `tsc`/`build` en verde, lint sin
+   problemas nuevos, **puerto 4000 LIBRE**.
+6. Commit `+15`.
 
 ### Sesiones anteriores
-1. Etapa 1 (`53e4b9c`), Etapa 2 service worker v3 (`9e04323`), regla de
+1. **#7 y #8** (`c54847f`, `+14`) + hito `+13` (`ec6880d`): build con
+   tipos verificados, ESLint 9 funcionando → deuda #10.
+2. Etapa 1 (`53e4b9c`), Etapa 2 service worker v3 (`9e04323`), regla de
    puertos y validación manual en 4000 (`fd8e9ce`, `8b5407e`) → detalle en
    `CAMBIOS.md`.
-2. Solución de red guardada + creación de `AGENT.MD` → `99a561d`, `9ba8d8c`.
+3. Solución de red guardada + creación de `AGENT.MD` → `99a561d`, `9ba8d8c`.
 
 ---
 
@@ -58,7 +63,8 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | Servidor Next huérfano (PID 23240) | ✅ Detenido | Puerto `::1:4000` liberado. **Regla nueva:** todo proceso = se lanza → ocupa el puerto → se cierra → desocupa. Sin puertos alternos |
 | Instalador Windows (`npm run build:exe`) | ⬜ No probado en esta sesión | Genera `.exe` en `dist-electron/` |
 | Control de versiones (Git) | ✅ Activo | Rama `main`, **sin cambios sin guardar** |
-| Datos del usuario | ✅ Intactos | Encriptados en el navegador (AES-GCM), no se tocaron |
+| Deshacer/Rehacer (Zustand `useAppStore`) | ✅ Activo | Puente en `page.tsx`; 1 acción = 1 paso; botones flotantes + `Ctrl+Z`/`Ctrl+Y`; el historial se limpia al recargar |
+| Datos del usuario | ✅ Intactos | Encriptados (AES-GCM); verificado **byte a byte**: cargar la versión nueva no escribe nada en las claves |
 | Dependencias (`node_modules`) | ✅ Instaladas | 1100 paquetes |
 | Node.js | ✅ v26.10.0 | Instalado por el usuario |
 
@@ -75,6 +81,7 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | 2026-10-02 | Etapa 2: service worker v3 (primero la red + respaldo sin conexión), probado en navegador | `9e04323`, `3a22c1c` |
 | 2026-10-02 | Regla de puertos + huérfano detenido + validación manual completa en 4000 | `fd8e9ce` + docs de validación |
 | 2026-10-02 | Commit de hito `+13` + **#7 y #8 resueltos**: build con tipos verificados, ESLint 9 funcionando, 15 errores ocultos reparados | `ec6880d` (`+13`) + `+14` |
+| 2026-10-02 | **#6 resuelto**: Zustand activo con deshacer/rehacer 1 a 1, persistencia en texto plano eliminada, integridad de datos verificada byte a byte | `+15` |
 
 **Punto de retorno al estado original de Javier:** `git checkout f68a431 -- .`
 
@@ -86,11 +93,16 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 
 | # | Qué | Riesgo | Por qué quedó |
 |---|---|---|---|
-| 6 | Zustand (`src/store/useAppStore.ts`) no está en uso | Nulo | Reservado por el prompt para el futuro "deshacer/rehacer". **No borrar** |
 | 9 | ~~Servidor Next huérfano (PID 23240, `::1:4000`)~~ | — | ✅ **Resuelto:** detenido con aprobación del usuario; puerto 4000 verificado libre |
 | 10 | **Deuda de lint:** 83 problemas (32 errores / 51 avisos) | Bajo a medio | Aparecieron al configurar ESLint 9 (#8). ~15 en `electron/`+`scripts/` (falsos positivos: `require()` es correcto ahí) y ~17 en `src/` (`any`, reglas de React). **No bloquea el build.** Requiere decisión: corregir deuda / limitar el alcance del lint / aceptar tal cual |
 
-### Resueltos en esta sesión (2026-10-02, commit `+14`)
+### Resueltos en esta sesión (2026-10-02, commit `+15`)
+
+| # | Pendiente | Cómo quedó |
+|---|---|---|
+| 6 | Zustand (`src/store/useAppStore.ts`) no estaba en uso | ✅ **Activo como puente** en `page.tsx`: vistas intactas; toda escritura pasa por el store (historial) y se guarda en las mismas 4 claves encriptadas. Corregidos 2 bugs latentes (el primer Ctrl+Z borraba todo / desfase de un paso), quitada la persistencia en texto plano `mis-gastos-storage`, botones + `Ctrl+Z`/`Ctrl+Y` |
+
+### Resueltos en la sesión anterior (2026-10-02, commit `+14`)
 
 | # | Pendiente | Cómo quedó |
 |---|---|---|

@@ -63,7 +63,7 @@ Archivo de contexto para cualquier agente que trabaje en este proyecto.
 │   │   ├── paymentService.ts
 │   │   └── loggerService.ts   # Logger estructurado
 │   └── store/
-│       └── useAppStore.ts      # Zustand (existe, NO en uso activo)
+│       └── useAppStore.ts      # Zustand (puente activo: historial deshacer/rehacer)
 ├── electron/                  # Empaquetado de escritorio
 │   ├── main.js                 # Servidor local estático + ventana
 │   ├── preload.js              # contextBridge + IPC (10 canales)
@@ -124,7 +124,7 @@ claves sin pedir aprobación. Hacerlo rompe los datos del usuario.
 | Dependencias (`node_modules`) | ✅ Instaladas | 1100 paquetes |
 | Control de versiones (Git) | ✅ Activo | Rama `main` |
 | Service worker (`sw.js` v3) | ✅ Corregido | Primero la red (siempre versión fresca) con copia de respaldo sin conexión; ver `CAMBIOS.md` |
-| Zustand (`useAppStore.ts`) | ⚠️ No en uso | Reservado para el futuro "deshacer/rehacer"; no borrar |
+| Zustand (`useAppStore.ts`) | ✅ En uso | Puente en `page.tsx`: historial deshacer/rehacer (1 acción = 1 paso); guarda en las mismas 4 claves encriptadas |
 
 > 📌 El **estado vivo** de cada sesión está en `AGENT.MD` — léelo antes de empezar.
 

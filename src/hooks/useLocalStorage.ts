@@ -130,8 +130,9 @@ async function decryptData<T>(encrypted: EncryptedData<T>): Promise<T | null> {
   }
 }
 
-export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void] {
+export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T | ((val: T) => T)) => void, boolean] {
   const [storedValue, setStoredValue] = useState<T>(initialValue);
+  const [isReady, setIsReady] = useState(false);
   const isHydrated = useRef(false);
   const isEncrypting = useRef(false);
 
@@ -163,6 +164,9 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
         }
       } catch (error) {
         console.error(`Error reading localStorage key "${key}":`, error);
+      } finally {
+        // Clave leída (o ausente): el valor ya está listo para hidratar
+        setIsReady(true);
       }
     };
     
@@ -203,5 +207,5 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T 
     }
   }, [key]);
 
-  return [storedValue, setValue];
+  return [storedValue, setValue, isReady];
 }
