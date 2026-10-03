@@ -1,6 +1,12 @@
 // ==========================================
-// Mis Gastos - Service Worker v2
-// Handles versioned caching for in-app updates
+// Mis Gastos - Service Worker v3
+// Copia versionada para actualizaciones internas.
+//
+// ESTRATEGIA (Etapa 2, 2026-10-02):
+// - Camino normal (caché base): PRIMERO LA RED, para ver siempre la
+//   versión más reciente; sin conexión se sirve la última copia guardada.
+// - Actualización oficial aplicada (mis-gastos-update-*): PRIMERO LA COPIA,
+//   para no mezclar la versión aplicada con la de la red.
 // ==========================================
 
 const DB_NAME = "mis-gastos-sw";
@@ -99,6 +105,23 @@ self.addEventListener("install", (event) => {
   );
 });
 
+/**
+ * Último recurso al no haber red: copia activa -> copia base -> aviso 503.
+ */
+async function offlineFallback(request, cacheName) {
+  try {
+    const cache = await caches.open(cacheName);
+    const cached = await cache.match(request);
+    if (cached) return cached;
+  } catch {}
+  try {
+    const defCache = await caches.open(DEFAULT_CACHE_NAME);
+    const fallback = await defCache.match(request);
+    if (fallback) return fallback;
+  } catch {}
+  return new Response("Offline - Sin conexion", { status: 503 });
+}
+
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   const url = new URL(event.request.url);
@@ -106,6 +129,33 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(
     getActiveCacheName().then(async (cacheName) => {
+      const isUpdateCache = cacheName.startsWith("mis-gastos-update-");
+
+      // --- Camino normal: PRIMERO LA RED (versión siempre fresca) ---
+      if (!isUpdateCache) {
+        try {
+          const response = await fetch(event.request);
+          if (response.ok) {
+            try {
+              const cache = await caches.open(cacheName);
+              cache.put(event.request, response.clone());
+            } catch {}
+            return response;
+          }
+          // La red respondió con error (502/503...): se usa la última
+          // copia guardada si existe; solo si no, se pasa el error.
+          try {
+            const cache = await caches.open(cacheName);
+            const cached = await cache.match(event.request);
+            if (cached) return cached;
+          } catch {}
+          return response;
+        } catch {
+          return offlineFallback(event.request, cacheName);
+        }
+      }
+
+      // --- Actualización aplicada: PRIMERO LA COPIA (comportamiento original) ---
       try {
         const cache = await caches.open(cacheName);
         const cached = await cache.match(event.request);
@@ -122,12 +172,7 @@ self.addEventListener("fetch", (event) => {
         }
         return response;
       } catch {
-        try {
-          const defCache = await caches.open(DEFAULT_CACHE_NAME);
-          const fallback = await defCache.match(event.request);
-          if (fallback) return fallback;
-        } catch {}
-        return new Response("Offline - Sin conexion", { status: 503 });
+        return offlineFallback(event.request, cacheName);
       }
     })
   );
