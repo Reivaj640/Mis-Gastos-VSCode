@@ -16,7 +16,7 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | | |
 |---|---|
 | **Fecha** | 2026-10-02 |
-| **Sesión** | Etapa 2: service worker corregido y probado (pendiente #1 resuelto) |
+| **Sesión** | Validación manual de la Etapa 2 en el puerto 4000 + regla de puertos |
 | **Estado** | ✅ Estable — todo guardado en Git |
 
 ### Qué se hizo en esta sesión
@@ -30,8 +30,12 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
    con el servidor apagado** ✅ · build ✅.
 4. **Regla de puertos (del usuario):** todo proceso = *se lanza → ocupa el
    puerto → se cierra → desocupa*. Detenido el servidor Next huérfano (PID
-   23240) y verificado el ciclo completo en el **puerto 4000** (ocupar →
-   servir → cerrar → **libre**). Puertos alternos prohibidos.
+   23240) y verificado el ciclo completo en el **puerto 4000** → commit `fd8e9ce`.
+5. **Validación manual (usuario + agente):** prueba del usuario exitosa;
+   su proceso de las 21:57 seguía corriendo (cerró con la X, no Ctrl + C) →
+   detenido; checklist in-app completado en **4000** (Configuración activa
+   copias ✅, recarga muestra siempre la última versión v2.1.3 ✅, puerto
+   libre al cerrar ✅).
 
 ### Sesiones anteriores
 1. Solución de red guardada + creación de `AGENT.MD` → `99a561d`, `9ba8d8c`.
@@ -65,7 +69,8 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | 2026-10-02 | Arranque en Windows arreglado (`tee` eliminado) + diagnóstico del loop de carga por red | `5c87754`, `9575e0e` |
 | 2026-10-02 | Solución de red guardada + creación de `AGENT.MD` | `99a561d`, `9ba8d8c` |
 | 2026-10-02 | Evaluación de los 6 pendientes + Etapa 1 ejecutada (metadataBase, limpieza de comandos y sobras) | `53e4b9c`, `63a8077` |
-| 2026-10-02 | Etapa 2: service worker v3 (primero la red + respaldo sin conexión), probado en navegador | `9e04323` |
+| 2026-10-02 | Etapa 2: service worker v3 (primero la red + respaldo sin conexión), probado en navegador | `9e04323`, `3a22c1c` |
+| 2026-10-02 | Regla de puertos + huérfano detenido + validación manual completa en 4000 | `fd8e9ce` + docs de validación |
 
 **Punto de retorno al estado original de Javier:** `git checkout f68a431 -- .`
 

@@ -324,4 +324,30 @@ exclusivamente el 4000. La regla quedó escrita en `AGENTS.md`.
 
 ---
 
+## 2026-10-02 — Validación manual de la Etapa 2 en el puerto 4000
+
+**Prueba manual del usuario:** éxito — abrió la app con `preview:network` y
+cerró con `Ctrl + C`. **Causa raíz confirmada del huérfano #9:** cerrar la
+terminal con la **X** en lugar de `Ctrl + C` (a veces VS Code no mata el
+proceso hijo).
+
+### Hallazgo
+La prueba del usuario de las **21:57 seguía corriendo** (PID 26180) — otra
+ocurrencia del mismo hábito. Se detuvo y se verificó el puerto libre.
+
+### Checklist in-app completado en el puerto 4000 (estándar)
+
+| Paso | Resultado |
+|---|---|
+| Lanzar `preview:network` en 4000 | ✅ |
+| Abrir **Configuración** → activa el sistema de copias | ✅ Panel de actualizaciones visible, service worker registrado por la interfaz real |
+| Recargar → siempre muestra la última versión | ✅ v2.1.3, service worker activo con el fix 502 |
+| Cerrar y liberar el puerto | ✅ **4000 LIBRE**, ya no responde |
+
+**Sin cambios de código.** Las pruebas técnicas de la Etapa 2 se habían hecho
+en 4001 solo por el bloqueo del huérfano; con él eliminado, la validación
+oficial quedó hecha en el **puerto 4000**.
+
+---
+
 *Proyecto original: Reivaj640 / Mis-Gastos-VSCode · Licencia MIT · Atribución conservada*
