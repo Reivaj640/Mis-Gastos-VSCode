@@ -19,7 +19,7 @@ function openDB(): Promise<IDBDatabase> {
   });
 }
 
-function dbGet(key: string): Promise<any> {
+function dbGet<T = unknown>(key: string): Promise<T | null> {
   return openDB().then(
     (db) =>
       new Promise((resolve, reject) => {
@@ -37,7 +37,7 @@ function dbGet(key: string): Promise<any> {
   );
 }
 
-function dbSet(key: string, value: any): Promise<void> {
+function dbSet(key: string, value: unknown): Promise<void> {
   return openDB().then(
     (db) =>
       new Promise((resolve, reject) => {
@@ -51,7 +51,7 @@ function dbSet(key: string, value: any): Promise<void> {
 
 // ---- Version info ----
 export async function getCurrentVersion(): Promise<string> {
-  return (await dbGet("currentVersion")) || APP_VERSION;
+  return (await dbGet<string>("currentVersion")) || APP_VERSION;
 }
 
 export async function setCurrentVersion(version: string): Promise<void> {
@@ -63,51 +63,6 @@ function getSW(): ServiceWorker | null {
   return navigator.serviceWorker?.controller || null;
 }
 
-function sendToSW(message: any, timeoutMs: number = 5000): Promise<any> {
-  return new Promise((resolve, reject) => {
-    const sw = getSW();
-    if (!sw) {
-      reject(new Error("Service Worker no activo"));
-      return;
-    }
-    
-    let isResolved = false;
-    const cleanup = () => {
-      if (isResolved) return;
-      isResolved = true;
-      try {
-        navigator.serviceWorker.removeEventListener("message", handler);
-      } catch (e) {
-        // Ignorar errores al remover listener
-      }
-    };
-    
-    const handler = (event: MessageEvent) => {
-      if (event.data?.type === message.type + "_RESPONSE" || event.data?.type === message.type.replace("REQ_", "")) {
-        cleanup();
-        resolve(event.data.data);
-      }
-    };
-    
-    // Usar addEventListener una sola vez y asegurar cleanup
-    navigator.serviceWorker.addEventListener("message", handler);
-    sw.postMessage(message);
-    
-    // Timeout configurable con cleanup adecuado
-    const timeoutId = setTimeout(() => {
-      cleanup();
-      // No resolver con null, sino rechazar para indicar fallo
-      reject(new Error(`Timeout esperando respuesta del Service Worker (${timeoutMs}ms)`));
-    }, timeoutMs);
-    
-    // Limpiar timeout si se resuelve antes
-    const originalResolve = resolve;
-    resolve = (value: any) => {
-      clearTimeout(timeoutId);
-      originalResolve(value);
-    };
-  });
-}
 
 // ---- File storage in Cache API ----
 function getContentType(path: string): string {
@@ -269,7 +224,7 @@ export async function applyUpdateFromFile(
     }
 
     onProgress?.(`Almacenando ${manifest.files.length} archivos...`);
-    const { cacheName, fileCount } = await prepareUpdate(manifest);
+    const { cacheName } = await prepareUpdate(manifest);
 
     onProgress?.("Activando actualización...");
     await activateUpdate(cacheName);
@@ -277,11 +232,11 @@ export async function applyUpdateFromFile(
 
     onProgress?.("Actualización aplicada correctamente");
     return { success: true, version: manifest.version };
-  } catch (err: any) {
+  } catch (err) {
     return {
       success: false,
       version: "",
-      error: err.message || "Error desconocido al aplicar la actualización",
+      error: err instanceof Error && err.message ? err.message : "Error desconocido al aplicar la actualización",
     };
   }
 }
@@ -315,7 +270,7 @@ export async function registerServiceWorker(): Promise<boolean> {
  * Get stored update info (pending update, etc.)
  */
 export async function getPendingUpdate(): Promise<UpdateManifest | null> {
-  return (await dbGet("pendingUpdate")) || null;
+  return (await dbGet<UpdateManifest>("pendingUpdate")) || null;
 }
 
 export async function setPendingUpdate(manifest: UpdateManifest | null): Promise<void> {

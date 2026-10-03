@@ -93,7 +93,7 @@ const server = http.createServer((req, res) => {
     const contentType = MIME_TYPES[ext] || "application/octet-stream";
     res.writeHead(200, { "Content-Type": contentType, "Cache-Control": "no-cache" });
     fs.createReadStream(filePath).pipe(res);
-  } catch (err) {
+  } catch {
     res.writeHead(500);
     res.end("Internal Server Error");
   }

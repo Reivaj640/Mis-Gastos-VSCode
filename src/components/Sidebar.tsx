@@ -6,16 +6,14 @@ import {
   CreditCard,
   History,
   Settings,
-  AlertTriangle,
   Sun,
   Moon,
   Monitor,
   Wallet,
-  Coffee,
 } from "lucide-react";
 import { useTheme } from "next-themes";
-import { cn, formatCurrencySimple, formatDaysLabel, getDaysUntilDue } from "@/lib/utils";
-import { ViewType, Expense, Payment, Income, AppSettings } from "@/lib/types";
+import { cn, formatCurrencySimple } from "@/lib/utils";
+import { ViewType, Expense, Payment, AppSettings } from "@/lib/types";
 import { getExpenseStatus, getCurrentPeriod } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { APP_VERSION } from "@/lib/version";
@@ -64,7 +62,6 @@ export default function Sidebar({ activeView, onViewChange, expenses, payments, 
   const unpaidCount = activeExpenses.filter((e) =>
     getExpenseStatus(e, payments, settings.alertDays, currentPeriod) !== "paid"
   ).length;
-  const paidCount = activeExpenses.length - unpaidCount;
   const totalRemaining = activeExpenses
     .filter((e) => getExpenseStatus(e, payments, settings.alertDays, currentPeriod) !== "paid")
     .reduce((sum, e) => sum + e.amount, 0);

@@ -16,6 +16,16 @@ const eslintConfig = [
   },
   ...coreWebVitals,
   ...typescript,
+  // Herramientas Node/Electron en CommonJS: ahí `require()` ES la forma
+  // correcta de importar (proceso principal de Electron, preload, y
+  // scripts `.cjs`/de Node). La regla `no-require-imports` es de estilo
+  // web/ESM y aquí sería un falso positivo — pendiente #10.
+  {
+    files: ["electron/**/*.js", "scripts/**/*.js", "scripts/**/*.cjs", "**/*.cjs"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
 ];
 
 export default eslintConfig;

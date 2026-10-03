@@ -491,4 +491,92 @@ como "no está en uso" — actualizarlo requiere decisión del usuario.
 
 ---
 
+## 2026-10-02 — Pendiente #10: deuda de lint saldada (83 → 0)
+
+**Autorización del usuario:** *"implementemos el pendiente #6 y luego el
+#10, ejecuta pruebas validando que todo funcione y que no se afecte el
+estado actual del sistema"*.
+
+### Qué era
+
+Al crear el ESLint 9 (#8) apareció la deuda: **83 problemas (32 errores
+/ 51 avisos)** repartidos en herramientas Node, código fuente y
+componentes.
+
+### Qué se hizo
+
+**1. Configuración honesta — 14 "errores" que eran falsos positivos**
+- `electron/main.js`, `electron/preload.js`, `electron/updater.js`,
+  `scripts/generate-update.js` y `scripts/serve-network.cjs` usan
+  `require()` porque **son CommonJS** (proceso principal de Electron y
+  scripts de Node). En `eslint.config.mjs` se apagó
+  `@typescript-eslint/no-require-imports` **solo para esos archivos**, con
+  comentario que lo justifica.
+
+**2. Código fuente — arreglos reales, sin ignorar nada (~50 avisos)**
+- Imports y variables declarados nunca usados → eliminados (mayoría en
+  `PaymentForm` 16, `PaymentHistory` 10, `Sidebar` 6, `AlertBanner` 4).
+- En `PaymentHistory` quedó sin uso una "búsqueda avanzada" incompleta
+  (montos/fechas siempre vacíos, sin interfaz): se quitó el estado muerto
+  y sus ramas de filtro — **el comportamiento visible es idéntico** (esos
+  filtros nunca podían activarse).
+- `paymentsToCSV` (Exportar CSV): parámetro sin uso quitado y arreglos
+  `any[]` tipados con `Payment[]`/`Expense[]` (el que lo llama actualizó
+  su llamada).
+- Código muerto eliminado: la función entera `sendToSW` en `updater.ts`
+  (5 problemas de una) y `getEncryptionKey` en `useLocalStorage`.
+- `catch (err)` con `err` sin usar → `catch {}`; el `const actionTypes`
+  de `use-toast` solo se usaba como tipo → el tipo quedó definido
+  directo.
+
+**3. Los 13 `any` → tipos reales**
+- `Dashboard` (prop muerta `expenses` quitada + `expense: Expense`),
+  `updater.ts` (genérico `dbGet<T>`, `dbSet(..., unknown)`, `catch` con
+  comprobación `instanceof Error`), `Settings`, `UpdateManager`,
+  `utils.ts`.
+
+**4. Los 5 errores de patrón React → los patrones que React recomienda**
+- `use-mobile.ts`: reescrito con **`useSyncExternalStore`** (suscripción
+  a `matchMedia` sin `setState` dentro del efecto).
+- `carousel.tsx`: estado de desplazamiento reescrito con
+  **`useSyncExternalStore`** (de paso se cerró una suscripción que se
+  filtraba — el listener `reInit` nunca se desuscribía). Componente sin
+  uso en la app; validado por tipos.
+- `UpdateManager`: `isElectron` pasó a **inicialización diferida**
+  (`useState(() => ...)`) en vez de `setIsElectron` en el efecto.
+- `ui/sidebar.tsx`: el ancho aleatorio del esqueleto (`Math.random`
+  durante el render = desajuste de hidratación) pasó a **ancho fijo**.
+- `page.tsx`: **1 sola excepción documentada** — `eslint-disable` con
+  justificación para el `setInitError` de la inicialización única de
+  arranque (moverlo alteraría el orden de arranque).
+
+### Pruebas (validando "que no se afecte el estado actual")
+
+| Prueba | Resultado |
+|---|---|
+| `npm run lint` | ✅ **EXIT 0 — 0 errores y 0 avisos** (antes 83) |
+| `npx tsc --noEmit` / `npm run build` | ✅ EXIT 0 / EXIT 0 |
+| Carga en navegador (puerto 4000) | ✅ "1 de 10 cumplidos · $2.209.900" |
+| 3 claves antes/después de 2 recargas | ✅ **byte idénticas** (cero escrituras; verificado contra copia en `sessionStorage`) |
+| `appSettings` / `mis-gastos-storage` | ✅ ausentes (igual que antes) |
+| Vistas Resumen, Historial, Registrar Pago, Configuración y Gastos | ✅ renderizan sin errores |
+| Exportar CSV (Historial) | ✅ toast de confirmación, sin errores |
+| Ciclo de puerto | ✅ servidor detenido → **4000 LIBRE** sin huérfanos |
+
+**Nota:** la rama "móvil" de `useIsMobile` no pudo emularse en este
+entorno (no hay herramienta de redimensionar); se dejó el patrón
+canónico de React y se verificó la rama de escritorio.
+
+**Archivos tocados:** `eslint.config.mjs`, `src/hooks/{use-mobile,
+use-toast,useLocalStorage}.ts`, `src/lib/{updater,utils}.ts`,
+`src/services/loggerService.ts`, `src/app/page.tsx` (1 comentario),
+`src/components/{Dashboard,PaymentForm,PaymentHistory,Sidebar,AlertBanner,
+Settings,UpdateManager,AdvancedSearch}.tsx`,
+`src/components/ui/{carousel,sidebar}.tsx`, `electron/main.js`,
+`scripts/serve-network.cjs` + los 3 documentos de trabajo.
+
+**Commit:** pendiente de mostrar al usuario (serie `+16`).
+
+---
+
 *Proyecto original: Reivaj640 / Mis-Gastos-VSCode · Licencia MIT · Atribución conservada*

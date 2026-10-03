@@ -60,7 +60,9 @@ export default function UpdateManager() {
   } | null>(null);
 
   // Electron auto-update state
-  const [isElectron, setIsElectron] = useState(false);
+  const [isElectron] = useState(
+    () => typeof window !== "undefined" && !!window.electronAPI?.isElectron
+  );
   const [checking, setChecking] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [downloadPercent, setDownloadPercent] = useState(0);
@@ -77,7 +79,6 @@ export default function UpdateManager() {
     const api = window.electronAPI;
     if (!api?.isElectron) return;
 
-    setIsElectron(true);
     api
       .getAppVersion()
       .then((v) => {
@@ -132,9 +133,9 @@ export default function UpdateManager() {
     try {
       await api.checkForUpdates();
       setTimeout(() => setChecking(false), 30000);
-    } catch (err: any) {
+    } catch (err) {
       setChecking(false);
-      setElectronError(err.message || "Error al buscar actualizaciones");
+      setElectronError(err instanceof Error && err.message ? err.message : "Error al buscar actualizaciones");
     }
   };
 
@@ -182,12 +183,13 @@ export default function UpdateManager() {
           variant: "destructive",
         });
       }
-    } catch (err: any) {
+    } catch (err) {
       clearInterval(progressInterval);
-      setLastResult({ success: false, version: "", error: err.message });
+      const mensajeError = err instanceof Error && err.message ? err.message : "Error desconocido al procesar el paquete";
+      setLastResult({ success: false, version: "", error: mensajeError });
       toast({
         title: "Error al procesar actualización",
-        description: err.message,
+        description: mensajeError,
         variant: "destructive",
       });
     } finally {

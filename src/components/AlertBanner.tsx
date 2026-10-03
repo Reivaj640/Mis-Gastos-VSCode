@@ -9,10 +9,6 @@ import {
   getExpenseStatus,
   formatCurrencySimple,
   getCurrentPeriod,
-  formatDaysLabel,
-  getDaysUntilDue,
-  getCategoryLabel,
-  getCategoryColor,
 } from "@/lib/utils";
 import {
   Droplets, Zap, Flame, Wifi, Home, Tag,

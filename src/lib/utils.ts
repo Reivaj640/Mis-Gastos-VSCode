@@ -1,6 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import { CATEGORIES, AppSettings } from "@/lib/types";
+import { CATEGORIES, AppSettings, Payment, Expense } from "@/lib/types";
 import { escapeCSV } from "./security";
 
 export function cn(...inputs: ClassValue[]) {
@@ -189,7 +189,7 @@ export function getLast12Periods(): string[] {
   return periods;
 }
 
-export function paymentsToCSV(payments: any[], expenses: any[], currencySymbol: string): string {
+export function paymentsToCSV(payments: Payment[], expenses: Expense[]): string {
   const header = "Fecha,Gasto,Categoría,Monto,Período,Notas";
   const rows = payments.map((p) => {
     const expense = expenses.find((e) => e.id === p.expenseId);

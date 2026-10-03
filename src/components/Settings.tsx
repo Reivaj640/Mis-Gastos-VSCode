@@ -20,7 +20,6 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -181,11 +180,11 @@ export default function Settings({
           title: "Datos restaurados correctamente",
           description: `${data.expenses.length} gastos y ${data.payments.length} pagos importados`
         });
-      } catch (err: any) {
+      } catch (err) {
         console.error('Error importando backup:', err);
         toast({ 
           title: "Error al importar", 
-          description: err.message || "No se pudo leer el archivo o el formato es inválido", 
+          description: err instanceof Error && err.message ? err.message : "No se pudo leer el archivo o el formato es inválido", 
           variant: "destructive" 
         });
       }

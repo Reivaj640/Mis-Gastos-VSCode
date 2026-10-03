@@ -16,36 +16,42 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | | |
 |---|---|
 | **Fecha** | 2026-10-02 |
-| **Sesión** | Pendiente #6 ejecutado: Zustand activo con deshacer/rehacer 1 a 1 |
+| **Sesión** | Pendiente #10 ejecutado: deuda de lint saldada (83 → 0) |
 | **Estado** | ✅ Estable — todo guardado en Git |
 
 ### Qué se hizo en esta sesión
-1. **#6 resuelto (autorizado):** el store Zustand quedó **activo como
-   puente** en `page.tsx`: las vistas no se tocaron, pero toda escritura
-   pasa por el store (que registra el historial) y se guarda en las
-   **mismas 4 claves encriptadas** de siempre.
-2. **Dos fallas latentes corregidas** (el store dormido nunca las había
-   ejecutado): la carga inicial metía el estado vacío en el historial
-   (el primer Ctrl+Z habría borrado todos los datos) y el deshacer tenía
-   desfase de un paso. Ahora **1 acción = 1 paso exacto**.
-3. **Se quitó** la persistencia en texto plano `mis-gastos-storage` del
-   store (duplicado sin encriptar) → solo existe lo cifrado.
-4. **Interfaz:** botones flotantes deshacer/rehacer (aparecen solo con
-   historial) + atajos `Ctrl+Z` / `Ctrl+Y` (dentro de campos de texto no
-   se activan, para no robar el deshacer nativo).
-5. **Pruebas completas en 4000:** claves byte idénticas al cargar la
-   versión nueva, crear → deshacer → rehacer 1 a 1, recarga sin
-   escrituras, sin `mis-gastos-storage`, `tsc`/`build` en verde, lint sin
-   problemas nuevos, **puerto 4000 LIBRE**.
-6. Commit `+15`.
+1. **#10 resuelto (autorizado):** `npm run lint` pasó de **83 problemas
+   (32 err / 51 avis) a 0** — sin ignorar nada en `src/`.
+2. **`electron/` + `scripts/`:** la regla `no-require-imports` quedó
+   apagada **solo ahí** (justificado en `eslint.config.mjs`): en
+   CommonJS, `require()` ES la forma correcta — 14 "errores" eran falsos
+   positivos.
+3. **`src/` — arreglos reales:** ~50 imports/variables sin uso quitados;
+   13 `any` sustituidos por tipos reales; 4 `setState` en efecto
+   reescritos con los patrones que React recomienda
+   (`useSyncExternalStore` en `use-mobile` e `isElectron` con
+   inicialización diferida); el ancho aleatorio del esqueleto del menú
+   pasó a fijo (`Math.random` en render = desajuste de hidratación).
+4. **Excepción documentada (1 sola):** `page.tsx` conserva un
+   `eslint-disable` con justificación para el `setInitError` de la
+   inicialización única de arranque (moverlo alteraría el orden de
+   arranque).
+5. **Pruebas:** lint 0 · tsc 0 · build 0 · navegador (Resumen,
+   Historial, Registrar Pago, Configuración, Gastos + export CSV) ✅ ·
+   recargas con las 3 claves **byte idénticas** (cero escrituras) · sin
+   `mis-gastos-storage` · **puerto 4000 LIBRE**.
+6. Commit `+16`.
 
 ### Sesiones anteriores
-1. **#7 y #8** (`c54847f`, `+14`) + hito `+13` (`ec6880d`): build con
+1. **#6** (`1367d49`, `+15`): Zustand activo con deshacer/rehacer 1 a 1,
+   persistencia en texto plano eliminada, integridad verificada byte a
+   byte.
+2. **#7 y #8** (`c54847f`, `+14`) + hito `+13` (`ec6880d`): build con
    tipos verificados, ESLint 9 funcionando → deuda #10.
-2. Etapa 1 (`53e4b9c`), Etapa 2 service worker v3 (`9e04323`), regla de
+3. Etapa 1 (`53e4b9c`), Etapa 2 service worker v3 (`9e04323`), regla de
    puertos y validación manual en 4000 (`fd8e9ce`, `8b5407e`) → detalle en
    `CAMBIOS.md`.
-3. Solución de red guardada + creación de `AGENT.MD` → `99a561d`, `9ba8d8c`.
+4. Solución de red guardada + creación de `AGENT.MD` → `99a561d`, `9ba8d8c`.
 
 ---
 
@@ -58,7 +64,7 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | App en este equipo (`npm run dev`) | ✅ Funciona | http://localhost:3000 |
 | App por red (`npm run preview:network`) | ✅ Funciona | Puerto 4000, muestra la dirección sola. **Confirmado por el usuario** |
 | Enlace al compartir (OpenGraph) | ✅ Corregido | `metadataBase` puesta; sin imágenes rotas |
-| Revisión de errores (`npm run lint`) | ✅ Funciona | `eslint.config.mjs` (ESLint 9); lista **83 problemas preexistentes** (32 err / 51 avis) → pendiente #10 |
+| Revisión de errores (`npm run lint`) | ✅ Limpio | `eslint.config.mjs` (ESLint 9); **0 errores y 0 avisos** (deuda #10 saldada: 83 → 0) |
 | Service worker (`public/sw.js` v3) | ✅ Corregido y probado | Primero la red (versión fresca) + copia sin conexión. Commit `9e04323` |
 | Servidor Next huérfano (PID 23240) | ✅ Detenido | Puerto `::1:4000` liberado. **Regla nueva:** todo proceso = se lanza → ocupa el puerto → se cierra → desocupa. Sin puertos alternos |
 | Instalador Windows (`npm run build:exe`) | ⬜ No probado en esta sesión | Genera `.exe` en `dist-electron/` |
@@ -82,6 +88,7 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | 2026-10-02 | Regla de puertos + huérfano detenido + validación manual completa en 4000 | `fd8e9ce` + docs de validación |
 | 2026-10-02 | Commit de hito `+13` + **#7 y #8 resueltos**: build con tipos verificados, ESLint 9 funcionando, 15 errores ocultos reparados | `ec6880d` (`+13`) + `+14` |
 | 2026-10-02 | **#6 resuelto**: Zustand activo con deshacer/rehacer 1 a 1, persistencia en texto plano eliminada, integridad de datos verificada byte a byte | `+15` |
+| 2026-10-02 | **#10 resuelto**: deuda de lint saldada — `lint` 83 → 0, `tsc` y `build` en verde, 5 vistas + export CSV probadas sin cambios de comportamiento | `+16` |
 
 **Punto de retorno al estado original de Javier:** `git checkout f68a431 -- .`
 
@@ -94,15 +101,20 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | # | Qué | Riesgo | Por qué quedó |
 |---|---|---|---|
 | 9 | ~~Servidor Next huérfano (PID 23240, `::1:4000`)~~ | — | ✅ **Resuelto:** detenido con aprobación del usuario; puerto 4000 verificado libre |
-| 10 | **Deuda de lint:** 83 problemas (32 errores / 51 avisos) | Bajo a medio | Aparecieron al configurar ESLint 9 (#8). ~15 en `electron/`+`scripts/` (falsos positivos: `require()` es correcto ahí) y ~17 en `src/` (`any`, reglas de React). **No bloquea el build.** Requiere decisión: corregir deuda / limitar el alcance del lint / aceptar tal cual |
 
-### Resueltos en esta sesión (2026-10-02, commit `+15`)
+### Resueltos en esta sesión (2026-10-02, commit `+16`)
+
+| # | Pendiente | Cómo quedó |
+|---|---|---|
+| 10 | **Deuda de lint:** 83 problemas (32 errores / 51 avisos) | ✅ **`npm run lint` = 0.** `electron/`+`scripts/`: regla `require` apagada solo ahí (CommonJS, justificada en la config). `src/`: ~50 imports/vars muertos quitados, 13 `any` con tipos reales, 4 `setState` en efecto con patrón canónico (`useSyncExternalStore` / inicialización diferida), ancho aleatorio en render → fijo; 1 `eslint-disable` documentado en `page.tsx`. Verificado: lint/tsc/build en 0, 5 vistas + CSV en navegador, datos byte idénticos |
+
+### Resueltos en la sesión anterior (2026-10-02, commit `+15`)
 
 | # | Pendiente | Cómo quedó |
 |---|---|---|
 | 6 | Zustand (`src/store/useAppStore.ts`) no estaba en uso | ✅ **Activo como puente** en `page.tsx`: vistas intactas; toda escritura pasa por el store (historial) y se guarda en las mismas 4 claves encriptadas. Corregidos 2 bugs latentes (el primer Ctrl+Z borraba todo / desfase de un paso), quitada la persistencia en texto plano `mis-gastos-storage`, botones + `Ctrl+Z`/`Ctrl+Y` |
 
-### Resueltos en la sesión anterior (2026-10-02, commit `+14`)
+### Resueltos hace dos sesiones (2026-10-02, commit `+14`)
 
 | # | Pendiente | Cómo quedó |
 |---|---|---|

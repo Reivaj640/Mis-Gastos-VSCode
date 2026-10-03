@@ -209,6 +209,7 @@ export default function Home() {
       }
     } catch (err) {
       console.error("Initialization error:", err);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Inicialización única de arranque: el error solo se establece una vez al montar; no puede generar cascadas de render.
       setInitError("Error al cargar datos. Intenta recargar la página.");
     }
 
