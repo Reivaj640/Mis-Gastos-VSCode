@@ -206,18 +206,19 @@ export async function activateUpdate(cacheName: string): Promise<void> {
     sw.postMessage({ type: "CACHE_UPDATED", data: { cacheName } });
     
     let isResolved = false;
+    let handler: (event: MessageEvent) => void = () => {};
     const cleanup = () => {
       if (isResolved) return;
       isResolved = true;
       try {
         navigator.serviceWorker.removeEventListener("message", handler);
-      } catch (e) {
+      } catch {
         // Ignorar errores
       }
     };
     
-    await new Promise<void>((resolve, reject) => {
-      const handler = (event: MessageEvent) => {
+    await new Promise<void>((resolve) => {
+      handler = (event: MessageEvent) => {
         if (event.data?.type === "CACHE_SWITCHED") {
           cleanup();
           resolve();

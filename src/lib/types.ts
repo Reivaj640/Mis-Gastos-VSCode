@@ -33,6 +33,10 @@ export interface AppSettings {
   currencySymbol: string;
   alertDays: number;
   customCategories: string[];
+  periodStartDay?: number;
+  currency?: string;
+  locale?: string;
+  theme?: string;
 }
 
 export type ViewType = "dashboard" | "expenses" | "payment" | "history" | "incomes" | "settings";

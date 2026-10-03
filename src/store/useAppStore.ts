@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { Expense, Payment, Income, AppSettings } from '@/types';
+import { Expense, Payment, Income, AppSettings } from '@/lib/types';
 
 interface AppState {
   // Datos
@@ -98,7 +98,9 @@ export const useAppStore = create<AppState>()(
       payments: [],
       incomes: [],
       settings: {
+        currencySymbol: '$',
         alertDays: 3,
+        customCategories: [],
         periodStartDay: 26,
         currency: 'CRC',
         locale: 'es-CR',
@@ -268,7 +270,9 @@ export const useAppStore = create<AppState>()(
           payments: [],
           incomes: [],
           settings: {
+            currencySymbol: '$',
             alertDays: 3,
+            customCategories: [],
             periodStartDay: 26,
             currency: 'CRC',
             locale: 'es-CR',

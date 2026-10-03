@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Search, X, Filter, Calendar, DollarSign } from 'lucide-react';
-import type { Expense, Payment } from '@/types';
+import type { Expense, Payment } from '@/lib/types';
 
 interface AdvancedSearchProps {
   expenses: Expense[];

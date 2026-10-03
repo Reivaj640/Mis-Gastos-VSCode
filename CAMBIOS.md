@@ -350,4 +350,56 @@ oficial quedó hecha en el **puerto 4000**.
 
 ---
 
+## 2026-10-02 — Pendientes #7 y #8: compilación con tipos verificados + ESLint 9 funcionando
+
+**Autorización del usuario:** *"Continúa con lo siguiente, lo autorizo,
+prosigue"* — ejecutar #7 y #8; **#6 (Zustand) se mantiene sin tocar**.
+
+### #8 — `npm run lint` dejó de fallar
+
+Se creó **`eslint.config.mjs`** (formato plano que exige ESLint 9), usando
+únicamente las reglas oficiales `eslint-config-next/core-web-vitals` +
+`eslint-config-next/typescript` (v16) — **sin dependencias nuevas**, con
+ignorados para `.next/`, `out/`, `dist*/` y `node_modules/`.
+
+- **Antes:** `npm run lint` → error inmediato (sin configuración).
+- **Ahora:** corre y reporta **83 problemas preexistentes (32 errores / 51
+  avisos)** → deuda hoy visible = nuevo pendiente **#10**.
+- Reparto de errores: ~15 en herramientas Node (`electron/`, `scripts/` —
+  allí `require()` es correcto, falsos positivos de lint web) y ~17 en
+  `src/` (`no-explicit-any`, `set-state-in-effect`, `no-unused-vars`).
+
+### #7 — la compilación ya no ignora errores de tipado
+
+Se quitó `typescript: { ignoreBuildErrors: true }` de `next.config.ts`.
+Eso destapó **6 errores originales + 9 más** que estaban ocultos:
+
+| Qué estaba mal | Corrección |
+|---|---|
+| 4 archivos importaban `@/types` — módulo que **nunca existió** en el historial de Git | Rutas cambiadas a `@/lib/types` (ubicación oficial) |
+| `useLocalStorage.getEncryptionKey` prometía `CryptoKey` pero devolvía una promesa | Firma corregida con `async/await` (función sin uso = riesgo cero) |
+| `updater.activateUpdate` usaba `handler` fuera de su ámbito — **fuga real de escucha** tapada por un `try/catch` | `handler` declarada al alcance correcto: la limpieza ahora sí la quita |
+| `paymentService` leía `.date` (7 usos) — el campo oficial es `paymentDate` (así lo usa toda la interfaz activa) | Alineado a `paymentDate` |
+| `expenseService.getDueDate` recibía `dueDay` opcional como obligatorio | Parámetro `number \| undefined` + defecto = último día del mes (sin día definido nunca queda vencido) |
+| `AppSettings` no declaraba campos que el store sí usa (`periodStartDay`, `currency`, `locale`, `theme`) | Añadidos como **opcionales**; los 2 literales del store ahora incluyen además los campos oficiales requeridos. El store quedó intacto en todo lo demás |
+
+### Verificaciones (todas pasadas)
+
+| Prueba | Resultado |
+|---|---|
+| `npx tsc --noEmit` | ✅ **EXIT 0 — cero errores** |
+| `npm run build` (tipos activos) | ✅ EXIT 0 — imprime `Running TypeScript ... Finished` (prueba de que la verificación corre) |
+| `npm run lint` | ✅ Corre y lista problemas (83 preexistentes) |
+| Humo en puerto 4000 (`preview:network`) | ✅ Dashboard completo, sin capa de errores, `readyState: complete` |
+| Ciclo de puerto | ✅ Servidor detenido → **4000 LIBRE** |
+
+**Sin cambios en datos** (claves de localStorage intactas) y **sin
+dependencias nuevas**. Archivos tocados: `eslint.config.mjs` (nuevo),
+`next.config.ts`, `src/lib/types.ts`, `src/lib/updater.ts`,
+`src/hooks/useLocalStorage.ts`, `src/services/expenseService.ts`,
+`src/services/paymentService.ts`, `src/store/useAppStore.ts`,
+`src/components/AdvancedSearch.tsx` + los 3 documentos de trabajo.
+
+---
+
 *Proyecto original: Reivaj640 / Mis-Gastos-VSCode · Licencia MIT · Atribución conservada*

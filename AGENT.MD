@@ -16,29 +16,31 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | | |
 |---|---|
 | **Fecha** | 2026-10-02 |
-| **Sesión** | Validación manual de la Etapa 2 en el puerto 4000 + regla de puertos |
+| **Sesión** | Pendientes #7 y #8 ejecutados: build con tipos verificados + ESLint 9 |
 | **Estado** | ✅ Estable — todo guardado en Git |
 
 ### Qué se hizo en esta sesión
-1. **Etapa 1** (aprobada): `metadataBase` +, se quitó la referencia a
-   `og-image.png` inexistente, se borraron comando `start`, comandos `db:*`,
-   `src/lib/db.ts` y `.env` → commit `53e4b9c` · docs `63a8077`.
-2. **Etapa 2** (aprobada): `public/sw.js` v2 → v3 — *"primero la red"* en el
-   camino normal (versión siempre fresca) y *"primero la copia"* solo para
-   actualizaciones oficiales; respaldo de copia ante error 502/503 → commit `9e04323`.
-3. **Pruebas en navegador real:** frescura ✅ · carga normal ✅ · **app completa
-   con el servidor apagado** ✅ · build ✅.
-4. **Regla de puertos (del usuario):** todo proceso = *se lanza → ocupa el
-   puerto → se cierra → desocupa*. Detenido el servidor Next huérfano (PID
-   23240) y verificado el ciclo completo en el **puerto 4000** → commit `fd8e9ce`.
-5. **Validación manual (usuario + agente):** prueba del usuario exitosa;
-   su proceso de las 21:57 seguía corriendo (cerró con la X, no Ctrl + C) →
-   detenido; checklist in-app completado en **4000** (Configuración activa
-   copias ✅, recarga muestra siempre la última versión v2.1.3 ✅, puerto
-   libre al cerrar ✅).
+1. **Commit de hito `+13`** (aprobado): estado actual con el formato
+   `símbolo + numeración + resumen ejecutivo` (la serie de commits se
+   numera desde `00`; el siguiente después de este será `+15`).
+2. **#8 resuelto** (autorizado): creado `eslint.config.mjs` (ESLint 9,
+   formato plano, reglas oficiales de Next 16) → `npm run lint` **funciona**
+   y lista 83 problemas preexistentes → nueva deuda = pendiente **#10**.
+3. **#7 resuelto** (autorizado): quitado `ignoreBuildErrors` y reparados
+   los **15 errores de tipado** que ocultaba (imports `@/types` que nunca
+   existió, `paymentService` con `.date`, ámbito de `handler`, firma de
+   encriptación, campos de `AppSettings`) → `tsc` y `build` en verde con
+   verificación **real**.
+4. **Prueba de humo en 4000:** dashboard completo ✅ · servidor detenido →
+   **puerto 4000 LIBRE** ✅.
+5. **#6 (Zustand) intacto:** solo se añadieron a sus 2 literales de
+   configuración los campos oficiales que ya usaba; nada más se tocó.
 
 ### Sesiones anteriores
-1. Solución de red guardada + creación de `AGENT.MD` → `99a561d`, `9ba8d8c`.
+1. Etapa 1 (`53e4b9c`), Etapa 2 service worker v3 (`9e04323`), regla de
+   puertos y validación manual en 4000 (`fd8e9ce`, `8b5407e`) → detalle en
+   `CAMBIOS.md`.
+2. Solución de red guardada + creación de `AGENT.MD` → `99a561d`, `9ba8d8c`.
 
 ---
 
@@ -46,11 +48,12 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 
 | Pieza | Estado | Notas |
 |---|---|---|
-| Compilación (`npm run build`) | ✅ Funciona | Sin errores y **sin avisos** (6.3 s), genera carpeta `out/` |
+| Compilación (`npm run build`) | ✅ Funciona | Con **verificación de tipos activa** (sin `ignoreBuildErrors`); genera carpeta `out/` |
+| Verificación de tipos (`npx tsc --noEmit`) | ✅ Cero errores | Antes tenía 15 errores ocultos por #7 (resuelto) |
 | App en este equipo (`npm run dev`) | ✅ Funciona | http://localhost:3000 |
 | App por red (`npm run preview:network`) | ✅ Funciona | Puerto 4000, muestra la dirección sola. **Confirmado por el usuario** |
 | Enlace al compartir (OpenGraph) | ✅ Corregido | `metadataBase` puesta; sin imágenes rotas |
-| Revisión de errores (`npm run lint`) | ⚠️ No funciona | Nunca funcionó: falta la configuración de ESLint 9 → pendiente #8 |
+| Revisión de errores (`npm run lint`) | ✅ Funciona | `eslint.config.mjs` (ESLint 9); lista **83 problemas preexistentes** (32 err / 51 avis) → pendiente #10 |
 | Service worker (`public/sw.js` v3) | ✅ Corregido y probado | Primero la red (versión fresca) + copia sin conexión. Commit `9e04323` |
 | Servidor Next huérfano (PID 23240) | ✅ Detenido | Puerto `::1:4000` liberado. **Regla nueva:** todo proceso = se lanza → ocupa el puerto → se cierra → desocupa. Sin puertos alternos |
 | Instalador Windows (`npm run build:exe`) | ⬜ No probado en esta sesión | Genera `.exe` en `dist-electron/` |
@@ -71,6 +74,7 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | 2026-10-02 | Evaluación de los 6 pendientes + Etapa 1 ejecutada (metadataBase, limpieza de comandos y sobras) | `53e4b9c`, `63a8077` |
 | 2026-10-02 | Etapa 2: service worker v3 (primero la red + respaldo sin conexión), probado en navegador | `9e04323`, `3a22c1c` |
 | 2026-10-02 | Regla de puertos + huérfano detenido + validación manual completa en 4000 | `fd8e9ce` + docs de validación |
+| 2026-10-02 | Commit de hito `+13` + **#7 y #8 resueltos**: build con tipos verificados, ESLint 9 funcionando, 15 errores ocultos reparados | `ec6880d` (`+13`) + `+14` |
 
 **Punto de retorno al estado original de Javier:** `git checkout f68a431 -- .`
 
@@ -83,9 +87,15 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | # | Qué | Riesgo | Por qué quedó |
 |---|---|---|---|
 | 6 | Zustand (`src/store/useAppStore.ts`) no está en uso | Nulo | Reservado por el prompt para el futuro "deshacer/rehacer". **No borrar** |
-| 7 | `next.config.ts` ignora errores de tipado (`ignoreBuildErrors: true`) | Medio a futuro | Heredado del original. Un error de tipo pasaría desapercibido en el build |
-| 8 | `npm run lint` siempre falla | Bajo | Falta la configuración de ESLint 9 (`eslint.config.*`). Ojo: `AGENTS.md` decía que funcionaba — ya quedó corregido |
 | 9 | ~~Servidor Next huérfano (PID 23240, `::1:4000`)~~ | — | ✅ **Resuelto:** detenido con aprobación del usuario; puerto 4000 verificado libre |
+| 10 | **Deuda de lint:** 83 problemas (32 errores / 51 avisos) | Bajo a medio | Aparecieron al configurar ESLint 9 (#8). ~15 en `electron/`+`scripts/` (falsos positivos: `require()` es correcto ahí) y ~17 en `src/` (`any`, reglas de React). **No bloquea el build.** Requiere decisión: corregir deuda / limitar el alcance del lint / aceptar tal cual |
+
+### Resueltos en esta sesión (2026-10-02, commit `+14`)
+
+| # | Pendiente | Cómo quedó |
+|---|---|---|
+| 7 | `next.config.ts` ignora errores de tipado (`ignoreBuildErrors: true`) | ✅ Quitado; reparados los **15 errores** que destapaba; `tsc --noEmit` = 0 y `build` en verde con la verificación corriendo de verdad |
+| 8 | `npm run lint` siempre falla (sin configuración ESLint 9) | ✅ Creado `eslint.config.mjs` (formato plano, reglas oficiales Next 16); el comando corre y lista la deuda → #10 |
 
 ### Resueltos en la Etapa 2 (2026-10-02, commit `9e04323`)
 

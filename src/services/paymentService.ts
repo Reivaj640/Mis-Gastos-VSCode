@@ -1,4 +1,4 @@
-import { Payment, Expense } from '@/types';
+import { Payment, Expense } from '@/lib/types';
 
 /**
  * Servicio centralizado para lógica de negocio de pagos
@@ -22,7 +22,7 @@ export const paymentService = {
       errors.push('Monto debe ser mayor a 0');
     }
     
-    if (!payment.date || isNaN(new Date(payment.date).getTime())) {
+    if (!payment.paymentDate || isNaN(new Date(payment.paymentDate).getTime())) {
       errors.push('Fecha inválida');
     }
     
@@ -54,7 +54,7 @@ export const paymentService = {
   isLastPayment: (paymentId: string, expenseId: string, payments: Payment[]): boolean => {
     const expensePayments = paymentService.getPaymentsForExpense(expenseId, payments);
     const lastPayment = expensePayments.sort((a, b) => 
-      new Date(b.date).getTime() - new Date(a.date).getTime()
+      new Date(b.paymentDate).getTime() - new Date(a.paymentDate).getTime()
     )[0];
     
     return lastPayment?.id === paymentId;
@@ -77,7 +77,7 @@ export const paymentService = {
    */
   groupPaymentsByMonth: (payments: Payment[], year: number): Record<number, Payment[]> => {
     return payments.reduce((acc, payment) => {
-      const date = new Date(payment.date);
+      const date = new Date(payment.paymentDate);
       if (date.getFullYear() === year) {
         const month = date.getMonth();
         if (!acc[month]) {
@@ -94,7 +94,7 @@ export const paymentService = {
    */
   getPaymentsInRange: (payments: Payment[], startDate: Date, endDate: Date): Payment[] => {
     return payments.filter(p => {
-      const paymentDate = new Date(p.date);
+      const paymentDate = new Date(p.paymentDate);
       return paymentDate >= startDate && paymentDate <= endDate;
     });
   },

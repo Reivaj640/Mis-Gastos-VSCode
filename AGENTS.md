@@ -14,7 +14,7 @@ Archivo de contexto para cualquier agente que trabaje en este proyecto.
 |---|---|
 | Ver la app en ESTE equipo | `npm run dev` → http://localhost:3000 |
 | Ver la app en OTROS equipos de tu red | `npm run build` → `npm run preview:network` → muestra la dirección sola |
-| Revisar errores | `npm run lint` ⚠️ **Hoy falla**: le falta la configuración de ESLint 9 (pendiente #8 de `AGENT.MD`). Mientras tanto, `npm run build` es la verificación confiable |
+| Revisar errores | `npm run lint` → lista los **83 problemas** preexistentes (pendiente #10 de `AGENT.MD`). `npm run build` → compilación + tipos en verde |
 | Ver lo que está mal sin conmovernos | `npm run build` |
 | Volver al código original de Javier | `git log --oneline` y `git checkout f68a431 -- .` |
 
@@ -118,8 +118,9 @@ claves sin pedir aprobación. Hacerlo rompe los datos del usuario.
 |---|---|---|
 | Arranque local (`npm run dev`) | ✅ Funciona | Para este equipo |
 | Arranque de red (`npm run preview:network`) | ✅ Funciona | Para probar en otros equipos |
-| Compilación (`npm run build`) | ✅ Sin errores | Genera carpeta `out/` |
-| Revisión de errores (`npm run lint`) | ⚠️ No funciona | Sin configuración de ESLint 9 (pendiente #8) |
+| Compilación (`npm run build`) | ✅ Sin errores | Con verificación de tipos activa (sin `ignoreBuildErrors`); genera carpeta `out/` |
+| Verificación de tipos (`npx tsc --noEmit`) | ✅ Cero errores | Comprobación directa de tipos, independiente del build |
+| Revisión de errores (`npm run lint`) | ✅ Funciona | `eslint.config.mjs` (ESLint 9); lista 83 problemas preexistentes (pendiente #10) |
 | Dependencias (`node_modules`) | ✅ Instaladas | 1100 paquetes |
 | Control de versiones (Git) | ✅ Activo | Rama `main` |
 | Service worker (`sw.js` v3) | ✅ Corregido | Primero la red (siempre versión fresca) con copia de respaldo sin conexión; ver `CAMBIOS.md` |

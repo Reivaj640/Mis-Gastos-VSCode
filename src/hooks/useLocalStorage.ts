@@ -13,17 +13,17 @@ interface EncryptedData<T> {
  * Genera una clave de encriptación basada en el origen del documento
  * Esto previene que scripts de otros dominios accedan a los datos
  */
-function getEncryptionKey(): CryptoKey | null {
+async function getEncryptionKey(): Promise<CryptoKey | null> {
   try {
     const encoder = new TextEncoder();
     const keyData = encoder.encode(window.location.origin + '__mis_gastos_key_v1');
-    return window.crypto.subtle.importKey(
+    return await window.crypto.subtle.importKey(
       'raw',
       keyData,
       { name: 'PBKDF2' },
       false,
       ['deriveBits', 'deriveKey']
-    ).then(key => key).catch(() => null);
+    );
   } catch {
     return null;
   }
