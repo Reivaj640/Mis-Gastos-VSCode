@@ -251,4 +251,53 @@ confirmada, pero **no se había creado el punto de retorno en Git**.
 
 ---
 
+## 2026-10-02 — Etapa 2: service worker corregido y probado (pendiente #1 resuelto)
+
+### Diagnóstico
+Confirmado el riesgo del pendiente #1: la estrategia *"primero la copia"* **nunca
+refrescaba** en el camino normal → este equipo podía ver versiones viejas tras
+recompilar. En otros equipos el servicio no se activa (los navegadores lo rechazan
+en HTTP de red), por lo que el riesgo era local.
+
+### Cambio aplicado (autorizado por el usuario — Etapa 2)
+
+**Solo `public/sw.js`** (v2 → v3):
+
+| Camino | Antes | Después |
+|---|---|---|
+| Normal (caché base) | Primero la copia, sin refresco | **Primero la red** → siempre la versión más reciente; cada respuesta buena actualiza la copia |
+| Sin conexión / red con error | Solo caía a copia si la descarga fallaba | Falla **o error 502/503** → última copia guardada; sin copia → aviso 503 |
+| Actualización oficial aplicada (`mis-gastos-update-*`) | Primero la copia | **Primero la copia (sin cambios)** — protege el sistema de actualizaciones internas |
+
+- **No toca:** datos, tipos, storage, IPC ni otros módulos. Reversible con
+  `git checkout 63a8077 -- public/sw.js`.
+
+### Hallazgos durante la prueba (reportados)
+
+1. **Corrección surgida de las pruebas:** el entorno de prueba devuelve **502**
+   en vez de rechazo de conexión cuando el servidor cae; la primera versión del
+   cambio pasaba ese error sin usar la copia. Se agregó el respaldo en errores
+   5xx. *Para el usuario final el comportamiento correcto es el mismo: app usable.*
+2. **Servidor Next huérfano:** proceso PID 23240 (arrancó **19:57 de la sesión
+   anterior**) escucha en `::1:4000` y **captura `localhost:4000`** antes que
+   `preview:network`. No se tocó — **pendiente de decisión del usuario**. Por eso
+   las pruebas se hicieron en el puerto 4001.
+3. **`preview:network` sirve `out/`** → tras tocar `public/` hay que recompilar
+   (`npm run build`) para que el cambio llegue al navegador.
+
+### Pruebas (navegador real, contra `preview:network` en puerto 4001)
+
+| Prueba | Resultado |
+|---|---|
+| Registro y activación del service worker v3 | ✅ |
+| **Frescura:** copia vieja (con marcador) en el navegador + servidor actualizado sin marcador → al recargar **NO** aparece lo viejo | ✅ |
+| Carga normal con el servidor arriba | ✅ |
+| **Sin conexión:** servidor APAGADO → la app abre **completa** desde la copia guardada | ✅ |
+| `node --check` + `npm run build` | ✅ |
+| Pestaña de pruebas cerrada y procesos propios detenidos | ✅ |
+
+**Commit:** `9e04323` — *"Etapa 2: service worker primero-la-red con respaldo sin conexion"*.
+
+---
+
 *Proyecto original: Reivaj640 / Mis-Gastos-VSCode · Licencia MIT · Atribución conservada*

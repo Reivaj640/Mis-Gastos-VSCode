@@ -16,21 +16,23 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | | |
 |---|---|
 | **Fecha** | 2026-10-02 |
-| **Sesión** | Evaluación de los 6 pendientes + Etapa 1 de limpieza (aprobada) |
+| **Sesión** | Etapa 2: service worker corregido y probado (pendiente #1 resuelto) |
 | **Estado** | ✅ Estable — todo guardado en Git |
 
 ### Qué se hizo en esta sesión
-1. Se evaluaron los 6 pendientes contra el código real (veredicto abajo).
-2. **Etapa 1 ejecutada y verificada** (aprobada por el usuario): `metadataBase` +,
-   se quitó la referencia a `og-image.png` inexistente, se borraron el comando
-   `start`, los comandos `db:*`, `src/lib/db.ts` y el `.env`.
-3. Verificación: `npm run build` ✅ (6.3 s, sin avisos) · HTML correcto · commit `53e4b9c`.
-4. Detectados 2 pendientes nuevos (#7 tipado ignorado, #8 lint sin configuración).
+1. **Etapa 1** (aprobada): `metadataBase` +, se quitó la referencia a
+   `og-image.png` inexistente, se borraron comando `start`, comandos `db:*`,
+   `src/lib/db.ts` y `.env` → commit `53e4b9c` · docs `63a8077`.
+2. **Etapa 2** (aprobada): `public/sw.js` v2 → v3 — *"primero la red"* en el
+   camino normal (versión siempre fresca) y *"primero la copia"* solo para
+   actualizaciones oficiales; respaldo de copia ante error 502/503 → commit `9e04323`.
+3. **Pruebas en navegador real:** frescura ✅ · carga normal ✅ · **app completa
+   con el servidor apagado** ✅ · build ✅.
+4. Detectado: servidor Next huérfano (PID 23240, `::1:4000`, de la sesión
+   anterior) — **no tocado, pendiente de decisión**.
 
-### Sesión anterior
-1. Se revisó el estado del proyecto y se guardó en Git el trabajo de la red
-   → commit `99a561d`.
-2. Se creó este archivo `AGENT.MD` → commit `9ba8d8c`.
+### Sesiones anteriores
+1. Solución de red guardada + creación de `AGENT.MD` → `99a561d`, `9ba8d8c`.
 
 ---
 
@@ -43,6 +45,8 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | App por red (`npm run preview:network`) | ✅ Funciona | Puerto 4000, muestra la dirección sola. **Confirmado por el usuario** |
 | Enlace al compartir (OpenGraph) | ✅ Corregido | `metadataBase` puesta; sin imágenes rotas |
 | Revisión de errores (`npm run lint`) | ⚠️ No funciona | Nunca funcionó: falta la configuración de ESLint 9 → pendiente #8 |
+| Service worker (`public/sw.js` v3) | ✅ Corregido y probado | Primero la red (versión fresca) + copia sin conexión. Commit `9e04323` |
+| Servidor Next huérfano (PID 23240) | ⚠️ Ajeno | Escucha en `::1:4000` desde la sesión anterior; interfiere con `localhost:4000`. **No tocar sin decisión del usuario** |
 | Instalador Windows (`npm run build:exe`) | ⬜ No probado en esta sesión | Genera `.exe` en `dist-electron/` |
 | Control de versiones (Git) | ✅ Activo | Rama `main`, **sin cambios sin guardar** |
 | Datos del usuario | ✅ Intactos | Encriptados en el navegador (AES-GCM), no se tocaron |
@@ -58,7 +62,8 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 | 2026-10-02 | Puesta en marcha: Git activado, prompt unificado, `CAMBIOS.md` creado. **Cero cambios en el código de la app** | `f68a431` → `7462bc4` → `6673a05` |
 | 2026-10-02 | Arranque en Windows arreglado (`tee` eliminado) + diagnóstico del loop de carga por red | `5c87754`, `9575e0e` |
 | 2026-10-02 | Solución de red guardada + creación de `AGENT.MD` | `99a561d`, `9ba8d8c` |
-| 2026-10-02 | Evaluación de los 6 pendientes + Etapa 1 ejecutada (metadataBase, limpieza de comandos y sobras) | `53e4b9c` |
+| 2026-10-02 | Evaluación de los 6 pendientes + Etapa 1 ejecutada (metadataBase, limpieza de comandos y sobras) | `53e4b9c`, `63a8077` |
+| 2026-10-02 | Etapa 2: service worker v3 (primero la red + respaldo sin conexión), probado en navegador | `9e04323` |
 
 **Punto de retorno al estado original de Javier:** `git checkout f68a431 -- .`
 
@@ -70,10 +75,16 @@ de cada sesión** con el usuario. Cualquier agente puede leerlo y saber en
 
 | # | Qué | Riesgo | Por qué quedó |
 |---|---|---|---|
-| **1** | **Service worker `public/sw.js` usa "primero la copia"** | **MEDIO** | Es el motor de actualizaciones internas. En este equipo puede mostrar una versión vieja tras recompilar; en otros equipos no se activa. **Siguiente etapa:** ajuste a "primero la red" en el camino normal, conservando la copia para actualizaciones oficiales — con pruebas |
 | 6 | Zustand (`src/store/useAppStore.ts`) no está en uso | Nulo | Reservado por el prompt para el futuro "deshacer/rehacer". **No borrar** |
 | 7 | `next.config.ts` ignora errores de tipado (`ignoreBuildErrors: true`) | Medio a futuro | Heredado del original. Un error de tipo pasaría desapercibido en el build |
 | 8 | `npm run lint` siempre falla | Bajo | Falta la configuración de ESLint 9 (`eslint.config.*`). Ojo: `AGENTS.md` decía que funcionaba — ya quedó corregido |
+| 9 | Servidor Next huérfano (PID 23240, `::1:4000`) | Bajo-medio | De la sesión anterior (19:57). Captura `localhost:4000` antes que `preview:network`. **Matar solo con decisión del usuario** |
+
+### Resueltos en la Etapa 2 (2026-10-02, commit `9e04323`)
+
+| # | Pendiente | Cómo quedó |
+|---|---|---|
+| 1 | Service worker "primero la copia" | ✅ **v3:** primero la red en el camino normal + respaldo sin conexión/error 502; conserva la copia para actualizaciones oficiales. Probado en navegador: frescura ✅, sin conexión ✅ |
 
 ### Resueltos en la Etapa 1 (2026-10-02, commit `53e4b9c`)
 

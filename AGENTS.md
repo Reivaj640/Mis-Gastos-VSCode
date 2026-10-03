@@ -114,7 +114,7 @@ claves sin pedir aprobación. Hacerlo rompe los datos del usuario.
 | Revisión de errores (`npm run lint`) | ⚠️ No funciona | Sin configuración de ESLint 9 (pendiente #8) |
 | Dependencias (`node_modules`) | ✅ Instaladas | 1100 paquetes |
 | Control de versiones (Git) | ✅ Activo | Rama `main` |
-| Service worker | ⚠️ Pendiente #1 | "Primero la copia": puede servir versiones viejas en este equipo; en otros equipos no se activa |
+| Service worker (`sw.js` v3) | ✅ Corregido | Primero la red (siempre versión fresca) con copia de respaldo sin conexión; ver `CAMBIOS.md` |
 | Zustand (`useAppStore.ts`) | ⚠️ No en uso | Reservado para el futuro "deshacer/rehacer"; no borrar |
 
 > 📌 El **estado vivo** de cada sesión está en `AGENT.MD` — léelo antes de empezar.
